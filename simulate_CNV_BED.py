@@ -1,6 +1,6 @@
 # simulate_CNV_BED.py
 # C: Oct  1, 2015
-# M: Oct 16, 2015
+# M: Oct 19, 2015
 # A: Leandro Lima <llima@ime.usp.br>
 
 
@@ -9,33 +9,6 @@ from random import randint
 from operator import itemgetter
 
 
-chrom_lens = {
-
-    "hg19": {
-        "chr1"  : 249250621,
-        "chr2"  : 243199373,
-        "chr3"  : 198022430,
-        "chr4"  : 191154276,
-        "chr5"  : 180915260,
-        "chr6"  : 171115067,
-        "chr7"  : 159138663,
-        "chr8"  : 146364022,
-        "chr9"  : 141213431,
-        "chr10" : 135534747,
-        "chr11" : 135006516,
-        "chr12" : 133851895,
-        "chr13" : 115169878,
-        "chr14" : 107349540,
-        "chr15" : 102531392,
-        "chr16" : 90354753,
-        "chr17" : 81195210,
-        "chr18" : 78077248,
-        "chr19" : 59128983,
-        "chr20" : 63025520,
-        "chr21" : 48129895,
-        "chr22" : 51304566,
-    }
-}
 
 def between(start, end, value):
     if (start <= value and value <= end) or (end <= value and value <= start):
@@ -46,17 +19,21 @@ def between(start, end, value):
 
 def main():
 
+    verbose = True # make it an option
+
     del_len_filename   = sys.argv[1] # File with deletion lengths (one per line)
     dup_len_filename   = sys.argv[2] # File with duplication lengths (one per line)
     output_bed_file    = sys.argv[3] # Output file name
     chromosome_name    = sys.argv[4] # Chromosome name
-    avoid_regions_file = sys.argv[5] # BED file name
+    chrom_lens_file    = sys.argv[5] # Chromosome lengths file
+    avoid_regions_file = sys.argv[6] # BED file name
+    # genome_version     = sys.argv[7] # genome version (hg18, hg19, hg38)
 
-    if not chromosome_name.startswith('chr'):
-        chromosome_name = 'chr' + chromosome_name
-    
-    # Change it later to make it flexible
-    genome_version = 'hg19'
+    # Usage: python simulate_CNV_BED.py [DEL_lengths_file] [DUP_lengths_file] [simulated_CNVs.bed] [chrom] [chrom_lens_file] [gaps_file]
+    # Example: python simulate_CNV_BED.py CNV_lengths.txt CNV_lengths.txt simulated_CNVs.bed chrX reference/chrom_lengths_hg19.txt reference/gaps_hg19.txt
+
+    if chromosome_name.startswith('chr'):
+        chromosome_name = chromosome_name[3:]
 
     distance_between_CNVs = 1000000
     CNV_lens = []
@@ -85,7 +62,7 @@ def main():
     regions_to_avoid = []
     for line in lines:
         chrom, start, end = line.split()[1:4]
-        if chrom == chromosome_name:
+        if chrom.replace('chr', '') == chromosome_name:
             regions_to_avoid.append([int(start), int(end)])
 
     regions_to_avoid = sorted(regions_to_avoid, key=itemgetter(0), reverse=False)
@@ -93,7 +70,17 @@ def main():
     avoid_end   = regions_to_avoid[0][1]
     regions_to_avoid = regions_to_avoid[1:]
 
-    chrom_len = chrom_lens[genome_version][chromosome_name]
+    chrom_lens = {}
+    with open(chrom_lens_file) as chrom_lens_file_lines:
+        for line in chrom_lens_file_lines:
+            try:
+                chrom, chrom_len = line.split()
+                chrom_lens[chrom] = int(chrom_len)
+            except:
+                pass
+
+
+    chrom_len = chrom_lens[chromosome_name]
 
     BED_file = open(output_bed_file, 'w')
     start = avoid_end + distance_between_CNVs
@@ -101,7 +88,7 @@ def main():
         CNV = CNV_lens[randint(0, len(CNV_lens)-1)]
         cnv_type, cnv_size = CNV.split('_')
         end = start + int(cnv_size)
-        if end > chrom_lens[genome_version][chromosome_name]:
+        if end > chrom_len:
             print 'Impossible to finish process of creating CNVs. Not enough chromosome length for simulated CNVs.'
         
         if between(start, end, avoid_start-distance_between_CNVs) or between(avoid_start-distance_between_CNVs, avoid_end+distance_between_CNVs, start):
@@ -111,7 +98,8 @@ def main():
             regions_to_avoid = regions_to_avoid[1:]
         else:
             BED_file.write('%s\t%d\t%d\t%s\n' % (chromosome_name, start, end, cnv_type))
-            #print 'created ', chromosome_name, str(start), str(end), cnv_type
+            if verbose:
+                print 'created ', chromosome_name, str(start), str(end), cnv_type
             CNV_lens.remove(CNV)
             start = end + distance_between_CNVs
 

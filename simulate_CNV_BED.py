@@ -1,7 +1,7 @@
 # simulate_CNV_BED.py
 # C: Oct  1, 2015
 # M: Oct 19, 2015
-# A: Leandro Lima <llima@ime.usp.br>
+# A: Leandro Lima <leandrol@usc.edu> / <llima@ime.usp.br>
 
 
 import sys

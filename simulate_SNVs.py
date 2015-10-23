@@ -1,14 +1,8 @@
 # simulate_SNVs.py
 # C: Sep 29, 2015
-# M: Oct 19, 2015
+# M: Oct 22, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
-############################################################
-###
-### .. notes ..
-### make it parallel (at least the SNV portion)
-###
-############################################################
 
 import sys
 from random import randint
@@ -28,14 +22,14 @@ def insert_SNV(REF, ALT, MAF):
         return REF
 
 
-
 def main():
 
     one_based = 1
     
     fasta_filename      = sys.argv[1]
     freq_filename       = sys.argv[2]
-    output_vcf_filename = sys.argv[3]
+    chromosome_name_vcf = sys.argv[3]
+    output_vcf_filename = sys.argv[4]
 
     output_vcf = open(output_vcf_filename, 'w')
 
@@ -54,7 +48,6 @@ def main():
     while frequencies[-1] == '':
         frequencies.pop()
 
-
     chrom_name = lines_fasta[0].replace('>', '')
     fasta_size_per_line = len(lines_fasta[1])
 
@@ -64,36 +57,58 @@ def main():
     start = 0
     end = start + fasta_size_per_line - 1
     freqs_line = 0 # for frequencies
-    CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split() # The program is assuming that the chromosome is the same. Fix this later!
-    print CHROM, POS, REF, ALT, MAF, rsID
+    CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
+    print 'Looking for chromosome in frequencies file.'
+    while CHROM != chromosome_name_vcf:
+        freqs_line += 1
+        CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
+        
+    # print CHROM, POS, REF, ALT, MAF, rsID
 
     for line_fasta in lines_fasta[1:]:
         # print 'start', start, 'end', end
         new_line = line_fasta
         if freqs_line < len(frequencies):
-            while int(POS) <= end + 1 and len(REF)*len(ALT) == 1:
-                if new_line[int(POS)-start-one_based].upper() == REF:
-                    base = insert_SNV(REF, ALT, float(MAF))
-                    if new_line[int(POS)-start-one_based].islower():
-                        base = base.lower()
-                    new_line = new_line[:int(POS)-start-one_based] + base + new_line[int(POS)-start-one_based+1:]
-                    if base.upper() != REF:
-                        output_vcf.write('%s\t%s\t%s\t%s\t.\t%s\n' % (CHROM, POS, REF, ALT, rsID))
-                    # print 'new_line', new_line, ' = ', new_line[:int(POS)-start-one_based], base, new_line[int(POS)-start-one_based+1:], '(', line_fasta, ')'
-                # if int(POS) == end + 1:
-                if int(POS) >= end + 1:
+            # print start, int(POS), end + 1, REF, len(REF), ALT, len(ALT)
+            while int(POS) <= end + 1:
+                if len(REF)*len(ALT) != 1:
                     freqs_line += 1
-                    if freqs_line < len(frequencies):
-                        CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
-                        print CHROM, POS, REF, ALT, MAF, rsID
-                    print 'breaking... (pos >= end)'
-                    break
-                freqs_line += 1
-                if freqs_line == len(frequencies):
-                    break
-                else:
                     CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
-                    # print CHROM, POS, REF, ALT, MAF, rsID
+                    if CHROM != chromosome_name_vcf:
+                        break
+                    continue
+                elif CHROM == chromosome_name_vcf:
+                    # print new_line[int(POS)-start-one_based].upper(), REF
+                    if new_line[int(POS)-start-one_based].upper() == REF:
+                        base = insert_SNV(REF, ALT, float(MAF))
+                        if new_line[int(POS)-start-one_based].islower():
+                            base = base.lower()
+                        new_line = new_line[:int(POS)-start-one_based] + base + new_line[int(POS)-start-one_based+1:]
+                        if base.upper() != REF:
+                            output_vcf.write('%s\t%s\t%s\t%s\t.\t%s\n' % (CHROM, POS, REF, ALT, rsID))
+                        # print 'new_line', new_line, ' = ', new_line[:int(POS)-start-one_based], base, new_line[int(POS)-start-one_based+1:], '(', line_fasta, ')'
+                    # if int(POS) == end + 1:
+                    else:
+                        print 'There is something wrong with position', POS, ' - fasta =', new_line[int(POS)-start-one_based], ' - vcf =', REF
+                    if int(POS) >= end + 1:
+                        freqs_line += 1
+                        if freqs_line < len(frequencies):
+                            CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
+                            # print CHROM, POS, REF, ALT, MAF, rsID
+                            if CHROM != chromosome_name_vcf:
+                                break
+                        # print 'breaking... (pos >= end)'
+                        break
+                    freqs_line += 1
+                    if freqs_line == len(frequencies):
+                        break
+                    else:
+                        CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
+                        # print CHROM, POS, REF, ALT, MAF, rsID
+                        if CHROM != chromosome_name_vcf:
+                            break
+                else:
+                    break
 
         output_fasta_file.write(new_line + '\n')
         start = end + 1

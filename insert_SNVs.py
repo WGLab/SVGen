@@ -1,6 +1,6 @@
-# simulate_SNVs.py
+# insert_SNVs.py
 # C: Sep 29, 2015
-# M: Oct 22, 2015
+# M: Oct 26, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -16,7 +16,6 @@ def insert_SNV(REF, ALT, MAF):
     rand_number = randint(1, 1000)
     if rand_number <= round(MAF * 1000):
         SNVs_inserted += 1
-        # print 'SNVs_inserted:', SNVs_inserted
         return ALT
     else:
         return REF
@@ -24,7 +23,7 @@ def insert_SNV(REF, ALT, MAF):
 
 def main():
 
-    one_based = 1
+    one_based = 1 # it could be used in case we have zero based positions
     
     fasta_filename      = sys.argv[1]
     freq_filename       = sys.argv[2]
@@ -41,9 +40,7 @@ def main():
         print 'Invalid fasta file!!'
         sys.exit(1)
 
-    # /home/llima/references/hg19_1000g2015aug/hg19_ALL.sites.2015_08.chr*.txt
-    # Downloaded from http://www.openbioinformatics.org/annovar/download/hg19_1000g2015aug.zip
-    # Make sure it's sorted by position
+    # Frequencies have to be sorted by position
     frequencies = open(freq_filename).read().split('\n')
     while frequencies[-1] == '':
         frequencies.pop()
@@ -65,20 +62,21 @@ def main():
         
     # print CHROM, POS, REF, ALT, MAF, rsID
 
+
+    # Reading fasta lines to compare with SNV positions
     for line_fasta in lines_fasta[1:]:
-        # print 'start', start, 'end', end
         new_line = line_fasta
+        # If there is still frequencies to read
         if freqs_line < len(frequencies):
-            # print start, int(POS), end + 1, REF, len(REF), ALT, len(ALT)
+            # Look for current SNV in fasta line
             while int(POS) <= end + 1:
-                if len(REF)*len(ALT) != 1:
+                if len(REF)*len(ALT) != 1: # inserting only 1-base SNVs
                     freqs_line += 1
                     CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
-                    if CHROM != chromosome_name_vcf:
+                    if CHROM != chromosome_name_vcf: # in case finds next chromosome in frequencies file
                         break
                     continue
-                elif CHROM == chromosome_name_vcf:
-                    # print new_line[int(POS)-start-one_based].upper(), REF
+                elif CHROM == chromosome_name_vcf: # confirming chromosome according to input
                     if new_line[int(POS)-start-one_based].upper() == REF:
                         base = insert_SNV(REF, ALT, float(MAF))
                         if new_line[int(POS)-start-one_based].islower():
@@ -86,18 +84,15 @@ def main():
                         new_line = new_line[:int(POS)-start-one_based] + base + new_line[int(POS)-start-one_based+1:]
                         if base.upper() != REF:
                             output_vcf.write('%s\t%s\t%s\t%s\t.\t%s\n' % (CHROM, POS, REF, ALT, rsID))
-                        # print 'new_line', new_line, ' = ', new_line[:int(POS)-start-one_based], base, new_line[int(POS)-start-one_based+1:], '(', line_fasta, ')'
-                    # if int(POS) == end + 1:
                     else:
+                        # Print in case fasta position is different of freq. position
                         print 'There is something wrong with position', POS, ' - fasta =', new_line[int(POS)-start-one_based], ' - vcf =', REF
                     if int(POS) >= end + 1:
                         freqs_line += 1
                         if freqs_line < len(frequencies):
                             CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
-                            # print CHROM, POS, REF, ALT, MAF, rsID
                             if CHROM != chromosome_name_vcf:
                                 break
-                        # print 'breaking... (pos >= end)'
                         break
                     freqs_line += 1
                     if freqs_line == len(frequencies):

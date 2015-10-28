@@ -1,6 +1,6 @@
 # insert_SNVs.py
 # C: Sep 29, 2015
-# M: Oct 26, 2015
+# M: Oct 28, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -25,10 +25,11 @@ def main():
 
     one_based = 1 # it could be used in case we have zero based positions
     
-    fasta_filename      = sys.argv[1]
-    freq_filename       = sys.argv[2]
-    chromosome_name_vcf = sys.argv[3]
-    output_vcf_filename = sys.argv[4]
+    fasta_input         = sys.argv[1]
+    fasta_output        = sys.argv[2]
+    freq_filename       = sys.argv[3]
+    chromosome_name_vcf = sys.argv[4]
+    output_vcf_filename = sys.argv[5]
 
     output_vcf = open(output_vcf_filename, 'w')
 
@@ -48,7 +49,7 @@ def main():
     chrom_name = lines_fasta[0].replace('>', '')
     fasta_size_per_line = len(lines_fasta[1])
 
-    output_fasta_file = open(chrom_name + '_SNVs.fa', 'w')
+    output_fasta_file = open(fasta_output, 'w')
     output_fasta_file.write('>' + chrom_name + '_SNVs\n')
 
     start = 0

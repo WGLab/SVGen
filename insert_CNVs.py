@@ -1,6 +1,6 @@
 # insert_CNVs.py
 # C: Sep 29, 2015
-# M: Oct 26, 2015
+# M: Oct 28, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -25,8 +25,8 @@ def insert_dup(seq, start, end, zero_based=False):
 
 
 
-def write_fasta(chrom_name, seq, size_per_line, variant_type):
-    chrom_fasta_file = open(chrom_name + '_with_' + variant_type +'.fa', 'w')
+def write_fasta(chrom_name, output_fasta_name, seq, size_per_line, variant_type):
+    chrom_fasta_file = open(output_fasta_name, 'w')
     chrom_fasta_file.write('>' + chrom_name + '_' + variant_type + '\n')
     i = 0
     while i < len(seq):
@@ -38,13 +38,14 @@ def write_fasta(chrom_name, seq, size_per_line, variant_type):
 
 def main():
 
-    if not len(sys.argv) == 3:
-        print 'Usage: python simulate_CNVs.py [fasta_file] [bed_file]'
+    if not len(sys.argv) == 4:
+        print 'Usage: python simulate_CNVs.py [fasta_input] [fasta_output] [bed_file]'
 
-    fasta_filename   = sys.argv[1]
-    cnv_bed_filename = sys.argv[2]
+    fasta_input      = sys.argv[1]
+    fasta_output     = sys.argv[2]
+    cnv_bed_filename = sys.argv[3]
 
-    lines = open(fasta_filename).read().split('\n')
+    lines = open(fasta_input).read().split('\n')
     while lines[-1] == '':
         lines.pop()
 
@@ -73,6 +74,7 @@ def main():
 
     cnv_regions = sorted(cnv_regions, key=itemgetter(1), reverse=True)
 
+    print 'Inserting CNVs in sequence.'
     for cnv_region in cnv_regions:
         chrom, start, end, cnv_type = cnv_region
         if cnv_type.upper().startswith('DEL'):
@@ -81,7 +83,8 @@ def main():
             chrom_seq = insert_dup(chrom_seq, start, end)
 
 
-    write_fasta(chrom_name, chrom_seq, fasta_size_per_line, 'CNVs')
+    print 'Writing to output file [%s].' % fasta_output
+    write_fasta(chrom_name, fasta_output, chrom_seq, fasta_size_per_line, 'CNVs')
     print 'Simulations for', chrom_name, 'done.'
     print 'Total size:', LEN_CHROM
     print 

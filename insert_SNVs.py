@@ -33,7 +33,7 @@ def main():
 
     output_vcf = open(output_vcf_filename, 'w')
 
-    lines_fasta = open(fasta_filename).read().split('\n')
+    lines_fasta = open(fasta_input).read().split('\n')
     while lines_fasta[-1] == '':
         lines_fasta.pop()
 
@@ -56,7 +56,7 @@ def main():
     end = start + fasta_size_per_line - 1
     freqs_line = 0 # for frequencies
     CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
-    print 'Looking for chromosome in frequencies file.'
+    print 'Looking for chromosome %s in frequencies file [%s].' % (chromosome_name_vcf, freq_filename)
     while CHROM != chromosome_name_vcf:
         freqs_line += 1
         CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
@@ -87,7 +87,8 @@ def main():
                             output_vcf.write('%s\t%s\t%s\t%s\t.\t%s\n' % (CHROM, POS, REF, ALT, rsID))
                     else:
                         # Print in case fasta position is different of freq. position
-                        print 'There is something wrong with position', POS, ' - fasta =', new_line[int(POS)-start-one_based], ' - vcf =', REF
+                        # print 'There is something wrong with position', POS, ' - fasta =', new_line[int(POS)-start-one_based], ' - vcf =', REF
+                        pass
                     if int(POS) >= end + 1:
                         freqs_line += 1
                         if freqs_line < len(frequencies):

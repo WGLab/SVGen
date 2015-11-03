@@ -10,6 +10,9 @@ from operator import itemgetter
 
 
 def insert_del(seq, start, end, zero_based=False):
+    if end <= start:
+        print 'Error! End position must be greater than Start.'
+        return seq
     if not zero_based:
         start -= 1
         end   -= 1
@@ -18,6 +21,9 @@ def insert_del(seq, start, end, zero_based=False):
 
 
 def insert_dup(seq, start, end, zero_based=False):
+    if end <= start:
+        print 'Error! End position must be greater than Start.'
+        return seq
     if not zero_based:
         start -= 1
         end   -= 1
@@ -26,14 +32,14 @@ def insert_dup(seq, start, end, zero_based=False):
 
 
 def insert_inv(seq, start, end, zero_based=False):
+    if end <= start:
+        print 'Error! End position must be greater than Start.'
+        return seq
     if not zero_based:
         start -= 1
         end   -= 1
-    if not start == 0:
-        return seq[:start] + seq[end:start-1:-1] + seq[end+1:]
-    else:
-        return seq[:start] + seq[end::-1] + seq[end+1:]
-
+    return seq[:start] + seq[start:end+1:][::-1] + seq[end+1:]
+ 
 
 
 def write_fasta(chrom_name, output_fasta_name, seq, size_per_line, variant_type):

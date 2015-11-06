@@ -1,12 +1,14 @@
 # simulate_SV_BED.py
 # C: Oct  1, 2015
-# M: Nov  2, 2015
+# M: Nov  6, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
-import sys
+import sys, argparse
 from random import randint
 from operator import itemgetter
+
+prog_name = 'simulate_SV_BED.py'
 
 
 def between(start, end, value):
@@ -18,48 +20,67 @@ def between(start, end, value):
 
 def main():
 
-    verbose = True # make it an option
+    parser = argparse.ArgumentParser(description='Get arguments to create random structural variant regions in a BED file.', prog=prog_name)
+    parser.add_argument('--del_lens',   nargs='?', type=file, metavar='del_lengths_file',   dest='del_len_filename',   help='Text file with deletion lengths.')
+    parser.add_argument('--dup_lens',   nargs='?', type=file, metavar='dup_lengths_file',   dest='dup_len_filename',   help='Text file with duplication lengths.')
+    parser.add_argument('--inv_lens',   nargs='?', type=file, metavar='inv_lengths_file',   dest='inv_len_filename',   help='Text file with inversion lengths.')
+    parser.add_argument('--trans_lens', nargs='?', type=file, metavar='trans_lengths_file', dest='trans_len_filename', help='Text file with translocation lengths.')
+    
+    parser.add_argument('--chrom_lens', required=True, type=file, metavar='chrom_lengths_file', dest='chrom_lens_file', help='Text file with chromosome lengths.')
+    parser.add_argument('--output', '-o', required=True, type=argparse.FileType('w'), metavar='output_bed_file', dest='output_bed_file', help='BED output file.')
+    parser.add_argument('--gaps', required=True, type=file, metavar='gaps_file', dest='avoid_regions_file', help='BED file with regions to avoid (centromeres and telomeres).')
+    parser.add_argument('--chrom', required=True, type=str, metavar='chromosome_name', dest='chromosome_name', help='Chromosome.')
+    parser.add_argument('--distance', '-d', type=int, metavar='distance_between_SVs', dest='distance_between_SVs', help='Distance between SVs.', default=100000)
 
-    del_len_filename   = sys.argv[1] # File with deletion lengths (one per line)
-    dup_len_filename   = sys.argv[2] # File with duplication lengths (one per line)
-    inv_len_filename   = sys.argv[3] # File with duplication lengths (one per line)
-    output_bed_file    = sys.argv[4] # Output file name
-    chromosome_name    = sys.argv[5] # Chromosome name
-    chrom_lens_file    = sys.argv[6] # Chromosome lengths file
-    avoid_regions_file = sys.argv[7] # BED file name
+    parser.add_argument('-v', '--verbose', action='store_true')
 
-    # Usage: python simulate_SV_BED.py [DEL_lengths_file] [DUP_lengths_file] [DUP_lengths_file] [simulated_SVs.bed] [chrom] [chrom_lens_file] [gaps_file]
-    # Example: python simulate_SV_BED.py SV_lengths.txt SV_lengths.txt SV_lengths.txt simulated_SVs.bed chrX reference/chrom_lengths_hg19.txt reference/gaps_hg19.txt
+    args = parser.parse_args()
+
+    # Checking if at least one type of variant was provided
+    if args.del_len_filename is None and args.dup_len_filename is None and args.inv_len_filename is None and args.trans_len_filename is None:
+        print '\n\n\tError! At least one file with variant (deletion, duplication, inversion or translocation) lengths has to be provided.\n\n'
+        sys.exit(1)
+
+
+    # Example:
+    #       python simulate_SV_BED.py --del_lens SV_lengths.txt --dup_lens SV_lengths.txt -o simulated_SVs_chr7.bed --chrom chr7 --chrom_lens reference/chrom_lengths_hg19.txt --gaps reference/gaps_hg19.txt
+    #
     # Example for all chromosomes:
-    # mkdir simulated_SVs; for chrom in {1..22} X Y; do python simulate_SV_BED.py SV_lengths.txt SV_lengths.txt simulated_SVs/simulated_SVs_chr$chrom.bed chr$chrom reference/chrom_lengths_hg19.txt reference/gaps_hg19.txt; done
+    #       mkdir simulated_SVs;
+    #       for chrom in {1..22} X Y; do python simulate_SV_BED.py --del_lens SV_lengths.txt --dup_lens SV_lengths.txt -o simulated_SVs/simulated_SVs_chr$chrom.bed --chrom chr$chrom --chrom_lens reference/chrom_lengths_hg19.txt --gaps reference/gaps_hg19.txt; done
 
-    if chromosome_name.startswith('chr'):
-        chromosome_name = chromosome_name[3:]
+    if args.chromosome_name.startswith('chr'):
+        args.chromosome_name = args.chromosome_name[3:]
 
-    distance_between_SVs = 100000
     SV_lens = []
 
-    lines = open(del_len_filename).read().split('\n')
-    while lines[-1] == '':
-        lines.pop()
+    if not args.del_len_filename is None:
+        lines = args.del_len_filename.read().split('\n')
+        while lines[-1] == '':
+            lines.pop()
+        SV_lens = ['del_'+line for line in lines]
 
-    SV_lens = ['del_'+line for line in lines]
+    if not args.dup_len_filename is None:
+        lines = args.dup_len_filename.read().split('\n')
+        while lines[-1] == '':
+            lines.pop()
+        SV_lens += ['dup_'+line for line in lines]
 
-    lines = open(dup_len_filename).read().split('\n')
-    while lines[-1] == '':
-        lines.pop()
+    if not args.inv_len_filename is None:
+        lines = args.inv_len_filename.read().split('\n')
+        while lines[-1] == '':
+            lines.pop()
+        SV_lens += ['inv_'+line for line in lines]
 
-    SV_lens += ['dup_'+line for line in lines]
-
-    lines = open(inv_len_filename).read().split('\n')
-    while lines[-1] == '':
-        lines.pop()
-
-    SV_lens += ['inv_'+line for line in lines]
+    if not args.trans_len_filename is None:
+        lines = args.trans_len_filename.read().split('\n')
+        while lines[-1] == '':
+            lines.pop()
+        SV_lens += ['trans_'+line for line in lines]
 
     # Avoiding gap regions (centromeres, telomeres, etc.): https://www.biostars.org/p/2349/#2351
 
-    lines = open(avoid_regions_file).read().split('\n')
+    lines = args.avoid_regions_file.read().split('\n')
     while lines[-1] == '':
         lines.pop()
 
@@ -69,7 +90,7 @@ def main():
     regions_to_avoid = []
     for line in lines:
         chrom, start, end = line.split()[1:4]
-        if chrom.replace('chr', '') == chromosome_name:
+        if chrom.replace('chr', '') == args.chromosome_name:
             regions_to_avoid.append([int(start), int(end)])
 
     regions_to_avoid = sorted(regions_to_avoid, key=itemgetter(0), reverse=False)
@@ -78,7 +99,7 @@ def main():
     regions_to_avoid = regions_to_avoid[1:]
 
     chrom_lens = {}
-    with open(chrom_lens_file) as chrom_lens_file_lines:
+    with args.chrom_lens_file as chrom_lens_file_lines:
         for line in chrom_lens_file_lines:
             try:
                 chrom, chrom_len = line.split()
@@ -87,30 +108,29 @@ def main():
                 pass
 
 
-    chrom_len = chrom_lens[chromosome_name]
+    chrom_len = chrom_lens[args.chromosome_name]
 
-    BED_file = open(output_bed_file, 'w')
-    start = avoid_end + distance_between_SVs
+    start = avoid_end + args.distance_between_SVs
     while SV_lens != []:
         SV = SV_lens[randint(0, len(SV_lens)-1)]
         sv_type, sv_size = SV.split('_')
         end = start + int(sv_size)
         if end > chrom_len:
-            print 'Impossible to finish process of creating SVs. Not enough chromosome length (size of %s is %d) for simulated SVs.' % (chromosome_name, chrom_len)
+            print 'Impossible to finish process of creating SVs. Not enough chromosome length (size of %s is %d) for simulated SVs.' % (args.chromosome_name, chrom_len)
             print 'Exiting.'
             break
         
-        if between(start, end, avoid_start-distance_between_SVs) or between(avoid_start-distance_between_SVs, avoid_end+distance_between_SVs, start):
-            start = avoid_end + int(1.1*distance_between_SVs)
+        if between(start, end, avoid_start-args.distance_between_SVs) or between(avoid_start-args.distance_between_SVs, avoid_end+args.distance_between_SVs, start):
+            start = avoid_end + int(1.1*args.distance_between_SVs)
             avoid_start = regions_to_avoid[0][0]
             avoid_end   = regions_to_avoid[0][1]
             regions_to_avoid = regions_to_avoid[1:]
         else:
-            BED_file.write('%s\t%d\t%d\t%s\n' % (chromosome_name, start, end, sv_type))
-            if verbose:
-                print 'Created ', chromosome_name, str(start), str(end), sv_type
+            args.output_bed_file.write('%s\t%d\t%d\t%s\n' % (args.chromosome_name, start, end, sv_type))
+            if args.verbose:
+                print 'Created ', args.chromosome_name, str(start), str(end), sv_type
             SV_lens.remove(SV)
-            start = end + distance_between_SVs
+            start = end + args.distance_between_SVs
 
 
 if __name__ == '__main__':

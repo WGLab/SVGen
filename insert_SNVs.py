@@ -1,10 +1,13 @@
 # insert_SNVs.py
 # C: Sep 29, 2015
-# M: Oct 28, 2015
+# M: Nov  9, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
-import sys
+prog_name = 'insert_SNVs.py'
+
+
+import sys, argparse
 from random import randint
 from operator import itemgetter
 
@@ -23,17 +26,25 @@ def insert_SNV(REF, ALT, MAF):
 
 def main():
 
+    parser = argparse.ArgumentParser(description='Get arguments to create single-nucleotide variants (SNVs) in a fasta file.', prog=prog_name)
+
     one_based = 1 # it could be used in case we have zero based positions
+
+    parser.add_argument('--fasta_input',  required=True, metavar='input.fasta',  type=file, help='Fasta file to be changed with SNVs.')
+    parser.add_argument('--fasta_output', required=True, metavar='output.fasta', dest='output_fasta_file', type=argparse.FileType('w'), help='Fasta file to be created with SNVs.')
+    parser.add_argument('--freq_file',    required=True, type=file, help='Fasta file to be changed with SNVs.')
+    parser.add_argument('--vcf_output',   required=True, type=argparse.FileType('w'), help='VCF file to be generated with SNVs inserted.')
+    parser.add_argument('--chrom', required=True, type=str, metavar='chrom', dest='chromosome_name_vcf', help='Chromosome.')
+
+    args = parser.parse_args()
     
-    fasta_input         = sys.argv[1]
-    fasta_output        = sys.argv[2]
-    freq_filename       = sys.argv[3]
-    chromosome_name_vcf = sys.argv[4]
-    output_vcf_filename = sys.argv[5]
+    # fasta_input         = sys.argv[1]
+    # fasta_output        = sys.argv[2]
+    # freq_filename       = sys.argv[3]
+    # chromosome_name_vcf = sys.argv[4]
+    # vcf_output_filename = sys.argv[5]
 
-    output_vcf = open(output_vcf_filename, 'w')
-
-    lines_fasta = open(fasta_input).read().split('\n')
+    lines_fasta = args.fasta_input.read().split('\n')
     while lines_fasta[-1] == '':
         lines_fasta.pop()
 
@@ -42,22 +53,21 @@ def main():
         sys.exit(1)
 
     # Frequencies have to be sorted by position
-    frequencies = open(freq_filename).read().split('\n')
+    frequencies = args.freq_file.read().split('\n')
     while frequencies[-1] == '':
         frequencies.pop()
 
     chrom_name = lines_fasta[0].replace('>', '')
     fasta_size_per_line = len(lines_fasta[1])
 
-    output_fasta_file = open(fasta_output, 'w')
-    output_fasta_file.write('>' + chrom_name + '_SNVs\n')
+    args.output_fasta_file.write('>' + chrom_name + '_SNVs\n')
 
     start = 0
     end = start + fasta_size_per_line - 1
     freqs_line = 0 # for frequencies
     CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
-    print 'Looking for chromosome %s in frequencies file [%s].' % (chromosome_name_vcf, freq_filename)
-    while CHROM != chromosome_name_vcf:
+    print 'Looking for chromosome %s in frequencies file [%s].' % (args.chromosome_name_vcf, args.freq_file.name)
+    while CHROM != args.chromosome_name_vcf:
         freqs_line += 1
         CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
         
@@ -74,17 +84,17 @@ def main():
                 if len(REF)*len(ALT) != 1: # inserting only 1-base SNVs
                     freqs_line += 1
                     CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
-                    if CHROM != chromosome_name_vcf: # in case finds next chromosome in frequencies file
+                    if CHROM != args.chromosome_name_vcf: # in case finds next chromosome in frequencies file
                         break
                     continue
-                elif CHROM == chromosome_name_vcf: # confirming chromosome according to input
+                elif CHROM == args.chromosome_name_vcf: # confirming chromosome according to input
                     if new_line[int(POS)-start-one_based].upper() == REF:
                         base = insert_SNV(REF, ALT, float(MAF))
                         if new_line[int(POS)-start-one_based].islower():
                             base = base.lower()
                         new_line = new_line[:int(POS)-start-one_based] + base + new_line[int(POS)-start-one_based+1:]
                         if base.upper() != REF:
-                            output_vcf.write('%s\t%s\t%s\t%s\t.\t%s\n' % (CHROM, POS, REF, ALT, rsID))
+                            args.vcf_output.write('%s\t%s\t%s\t%s\t.\t%s\n' % (CHROM, POS, REF, ALT, rsID))
                     else:
                         # Print in case fasta position is different of freq. position
                         # print 'There is something wrong with position', POS, ' - fasta =', new_line[int(POS)-start-one_based], ' - vcf =', REF
@@ -93,7 +103,7 @@ def main():
                         freqs_line += 1
                         if freqs_line < len(frequencies):
                             CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
-                            if CHROM != chromosome_name_vcf:
+                            if CHROM != args.chromosome_name_vcf:
                                 break
                         break
                     freqs_line += 1
@@ -102,12 +112,12 @@ def main():
                     else:
                         CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
                         # print CHROM, POS, REF, ALT, MAF, rsID
-                        if CHROM != chromosome_name_vcf:
+                        if CHROM != args.chromosome_name_vcf:
                             break
                 else:
                     break
 
-        output_fasta_file.write(new_line + '\n')
+        args.output_fasta_file.write(new_line + '\n')
         start = end + 1
         end = start + fasta_size_per_line - 1
 

@@ -7,11 +7,13 @@ import sys
 
 def main():
     filename = sys.argv[1]
-    
+    print 'Opening input file.'    
     fasta = open(filename).read()
+    print 'Splitting input file.'
     seqs = fasta.split('>')[1:]
     for seq in seqs:
-        label = seq.split('\n')[0]
+        label = seq.split('\n')[0].split()[0]
+        print 'Creating file %s.fa' % label
         output = open(label + '.fa', 'w')
         output.write('>%s' % seq)
         output.close()

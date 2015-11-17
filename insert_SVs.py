@@ -1,12 +1,14 @@
 # insert_SVs.py
 # C: Sep 29, 2015
-# M: Nov  2, 2015
+# M: Nov 17, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
-import sys
+import sys, argparse, linecache
 from random import randint
 from operator import itemgetter
+
+prog_name = 'insert_SVs.py'
 
 
 def insert_del(seq, start, end, zero_based=False):
@@ -39,30 +41,97 @@ def insert_inv(seq, start, end, zero_based=False):
         start -= 1
         end   -= 1
     return seq[:start] + seq[start:end+1:][::-1] + seq[end+1:]
- 
 
 
-def write_fasta(chrom_name, output_fasta_name, seq, size_per_line, variant_type):
-    chrom_fasta_file = open(output_fasta_name, 'w')
-    chrom_fasta_file.write('>' + chrom_name + '_' + variant_type + '\n')
+
+def insert_trans(large_seq, small_seq, start, zero_based=False):
+    if not zero_based:
+        start -= 1
+    return large_seq[:start] + small_seq + large_seq[start:]
+
+
+
+def calculate_positions(start, end, line_len):
+    '''This function calculate the positions of starting line, starting position, ending line and ending position,
+    given starting and ending position in a chromosome, assuming that positions are 1-based.
+    '''
+    start_line = ((start-1) / line_len) + 1
+    end_line   = ((end-1)   / line_len) + 1
+    start_pos  = start - line_len*(start_line - 1) - 1
+    end_pos    = end   - line_len*(end_line   - 1) - 1 
+    return start_line, start_pos, end_line, end_pos
+
+
+
+def get_subseq_from_fasta(fasta_input_path, start_line, start_pos, end_line, end_pos):
+    if start_line < 1:
+        print 'Error! Start line has to be greater than 1.'
+        return None
+    if end_line < start_line:
+        print 'Error! End line has to be greater than start line.'
+        return None
+    line_number = start_line
+    seq = linecache.getline(fasta_input_path, line_number)[start_pos:].strip()
+    # print 'line_number', line_number
+    line_number += 1
+    while line_number < end_line:
+        # print 'line_number', line_number
+        seq += linecache.getline(fasta_input_path, line_number).strip()
+        line_number += 1
+    #
+    if start_line == end_line:
+        seq = linecache.getline(fasta_input_path, start_line)[start_pos:end_pos+1].strip()
+        linecache.clearcache()
+        return seq
+    # print 'line_number', line_number
+    seq += linecache.getline(fasta_input_path, line_number)[:end_pos+1].strip()
+    linecache.clearcache()
+    return seq
+
+# get_subseq_from_fasta('test2.fa', 0, 0, 2, 2)
+
+
+
+def write_fasta(chrom_name, output_fasta, seq, size_per_line, fasta_label=None):
+    # chrom_fasta_file = open(output_fasta_name, 'w')
+    if fasta_label is None:
+        output_fasta.write('>' + chrom_name + '\n')
+    else:
+        output_fasta.write('>' + fasta_label + '\n')
     i = 0
     while i < len(seq):
-        chrom_fasta_file.write(seq[i:i+size_per_line] + '\n')
+        output_fasta.write(seq[i:i+size_per_line] + '\n')
         i += size_per_line
-    chrom_fasta_file.close()
+    output_fasta.close()
 
 
 
 def main():
 
-    if not len(sys.argv) == 4:
-        print 'Usage: python simulate_CNVs.py [fasta_input] [fasta_output] [bed_file]'
+    parser = argparse.ArgumentParser(description='This program inserts structural variants from a BED file into a FASTA file.', prog=prog_name)
+    parser.add_argument('--fasta_input', '-i',  required=True, metavar='input.fasta',  type=file, help='Fasta file to be changed with SVs.')
+    parser.add_argument('--fasta_output', '-o', required=True, metavar='output.fasta', type=argparse.FileType('w'), help='Fasta file to be created with SVs.')
+    parser.add_argument('--bed', dest='sv_bed', required=True, metavar='SVs.bed', type=file, help='BED file with SVs to be inserted.')
+    parser.add_argument('--chrom_lens', required=True, type=file, metavar='chrom_lengths_file', dest='chrom_lens_file', help='Text file with chromosome lengths.')
+    # parser.add_argument('--fasta_type', '-f',  required=True, metavar='fasta_type',  type=str, help='A [single] fasta file or [multiple]?')
+    parser.add_argument('--fasta_label', required=True, type=str, metavar='fasta_label', dest='fasta_label', help='Name to label fasta sequence.')
 
-    fasta_input      = sys.argv[1]
-    fasta_output     = sys.argv[2]
-    sv_bed_filename  = sys.argv[3]
+    parser.add_argument('-v', '--verbose', action='store_true')
 
-    lines = open(fasta_input).read().split('\n')
+    args = parser.parse_args()
+
+
+    chrom_lens = {}
+    with args.chrom_lens_file as chrom_lens_file_lines:
+        for line in chrom_lens_file_lines:
+            try:
+                chrom, chrom_len = line.split()
+                chrom_lens[chrom] = int(chrom_len)
+            except:
+                pass
+
+
+    lines = args.fasta_input.read().split('\n')
     while lines[-1] == '':
         lines.pop()
 
@@ -74,36 +143,56 @@ def main():
 
     fasta_size_per_line = len(lines[1])
 
+    # if args.fasta_type == 'multiple':
     chrom_seq = ''
     LEN_CHROM = 0
     for line in lines[1:]:
         LEN_CHROM += len(line)
         chrom_seq += line.upper()
+    # chrom_seq += line
 
-    lines = open(sv_bed_filename).read().split('\n')
+    lines = args.sv_bed.read().split('\n')
     while lines[-1] == '':
         lines.pop()
 
-    cnv_regions = []
+    sv_regions = []
     for line in lines:
-        chrom, start, end, cnv_type = line.split()
-        cnv_regions.append([chrom, int(start), int(end), cnv_type])
+        elems = line.split()
+        chrom, start, end, sv_type = elems[:4]
+        if len(elems) > 4:
+            translocation_info = elems[4]
+            sv_regions.append([chrom, int(start), int(end), sv_type, translocation_info])
+        else:
+            sv_regions.append([chrom, int(start), int(end), sv_type])
 
-    cnv_regions = sorted(cnv_regions, key=itemgetter(1), reverse=True)
+    sv_regions = sorted(sv_regions, key=itemgetter(1), reverse=True)
 
     print 'Inserting CNVs in sequence.'
-    for cnv_region in cnv_regions:
-        chrom, start, end, cnv_type = cnv_region
-        if cnv_type.upper().startswith('DEL'):
+    for sv_region in sv_regions:
+        chrom, start, end, sv_type = sv_region[:4]
+        if args.verbose:
+            print 'Inserting %s in %s:%s-%s.' % (sv_type.upper(), chrom, start, end)
+        if len(sv_region) > 4:
+            translocation_info = sv_region[4]
+        if sv_type.upper().startswith('DEL'):
             chrom_seq = insert_del(chrom_seq, start, end)
-        elif cnv_type.upper().startswith('DUP'):
+        elif sv_type.upper().startswith('DUP'):
             chrom_seq = insert_dup(chrom_seq, start, end)
-        elif cnv_type.upper().startswith('INV'):
+        elif sv_type.upper().startswith('INV'):
             chrom_seq = insert_inv(chrom_seq, start, end)
+        elif sv_type.upper().startswith('UNBTR') or sv_type.upper().startswith('BALTR'):
+            chrom_tr = translocation_info.split(':')[0]
+            start_tr, end_tr = translocation_info.split(':')[1].split('-')
+            start_line, start_pos, end_line, end_pos = calculate_positions(start, end, fasta_size_per_line)
+            trans_chrom_filename = args.fasta_input.name.replace(chrom_name, chrom_tr)
+            if args.verbose:
+                print 'Getting sequence %s from file [%s].' % (translocation_info, trans_chrom_filename)
+            trans_seq = get_seq(chrom, start_line, start_pos, end_line, end_pos)
+            chrom_seq = insert_trans(chrom_seq, trans_seq, start)
 
 
-    print 'Writing to output file [%s].' % fasta_output
-    write_fasta(chrom_name, fasta_output, chrom_seq, fasta_size_per_line, 'CNVs')
+    print 'Writing to output file [%s].' % args.fasta_output.name
+    write_fasta(chrom_name, args.fasta_output, chrom_seq, fasta_size_per_line, args.fasta_label)
     print 'Simulations for', chrom_name, 'done.'
     print 'Total size:', LEN_CHROM
     print 

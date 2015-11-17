@@ -1,6 +1,6 @@
 # simulate_SV_BED.py
 # C: Oct  1, 2015
-# M: Nov 12, 2015
+# M: Nov 17, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -19,6 +19,26 @@ def between(start, end, value):
         return True
     else:
         return False
+
+
+
+# Function from https://codereview.stackexchange.com/a/69249/89845
+def sort_and_merge_intervals(intervals):
+    sorted_by_lower_bound = sorted(intervals, key=lambda tup: tup[0])
+    merged = []
+    for higher in sorted_by_lower_bound:
+        if not merged:
+            merged.append(higher)
+        else:
+            lower = merged[-1]
+            # test for intersection between lower and higher:
+            # we know via sorting that lower[0] <= higher[0]
+            if higher[0] <= lower[1]:
+                upper_bound = max(lower[1], higher[1])
+                merged[-1] = (lower[0], upper_bound)  # replace by merged interval
+            else:
+                merged.append(higher)
+    return merged
 
 
 
@@ -124,7 +144,7 @@ def main():
     starts = {}
     ends   = {}
     for chrom in regions_to_avoid.keys():
-        regions_to_avoid[chrom] = sorted(regions_to_avoid[chrom], key=itemgetter(0), reverse=False)
+        regions_to_avoid[chrom] = sort_and_merge_intervals(regions_to_avoid[chrom])
         starts[chrom] = 0
         ends[chrom] = 0
 

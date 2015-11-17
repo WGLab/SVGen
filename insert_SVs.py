@@ -114,7 +114,7 @@ def main():
     parser.add_argument('--bed', dest='sv_bed', required=True, metavar='SVs.bed', type=file, help='BED file with SVs to be inserted.')
     parser.add_argument('--chrom_lens', required=True, type=file, metavar='chrom_lengths_file', dest='chrom_lens_file', help='Text file with chromosome lengths.')
     # parser.add_argument('--fasta_type', '-f',  required=True, metavar='fasta_type',  type=str, help='A [single] fasta file or [multiple]?')
-    parser.add_argument('--fasta_label', required=True, type=str, metavar='fasta_label', dest='fasta_label', help='Name to label fasta sequence.')
+    parser.add_argument('--fasta_label', required=False, type=str, metavar='fasta_label', dest='fasta_label', help='Name to label fasta sequence.')
 
     parser.add_argument('-v', '--verbose', action='store_true')
 

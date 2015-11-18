@@ -72,28 +72,21 @@ def get_subseq_from_fasta(fasta_input_path, start_line, start_pos, end_line, end
         return None
     line_number = start_line
     seq = linecache.getline(fasta_input_path, line_number)[start_pos:].strip()
-    # print 'line_number', line_number
     line_number += 1
     while line_number < end_line:
-        # print 'line_number', line_number
         seq += linecache.getline(fasta_input_path, line_number).strip()
         line_number += 1
-    #
     if start_line == end_line:
         seq = linecache.getline(fasta_input_path, start_line)[start_pos:end_pos+1].strip()
         linecache.clearcache()
         return seq
-    # print 'line_number', line_number
     seq += linecache.getline(fasta_input_path, line_number)[:end_pos+1].strip()
     linecache.clearcache()
     return seq
 
-# get_subseq_from_fasta('test2.fa', 0, 0, 2, 2)
-
 
 
 def write_fasta(chrom_name, output_fasta, seq, size_per_line, fasta_label=None):
-    # chrom_fasta_file = open(output_fasta_name, 'w')
     if fasta_label is None:
         output_fasta.write('>' + chrom_name + '\n')
     else:

@@ -1,6 +1,6 @@
 # insert_SVs.py
 # C: Sep 29, 2015
-# M: Nov 17, 2015
+# M: Nov 19, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -107,6 +107,7 @@ def main():
     parser.add_argument('--bed', dest='sv_bed', required=True, metavar='SVs.bed', type=file, help='BED file with SVs to be inserted.')
     parser.add_argument('--chrom_lens', required=True, type=file, metavar='chrom_lengths_file', dest='chrom_lens_file', help='Text file with chromosome lengths.')
     # parser.add_argument('--fasta_type', '-f',  required=True, metavar='fasta_type',  type=str, help='A [single] fasta file or [multiple]?')
+    parser.add_argument('--chrom', required=True, type=str, metavar='chromosome_name', dest='chromosome_name', help='Chromosome.')
     parser.add_argument('--fasta_label', required=False, type=str, metavar='fasta_label', dest='fasta_label', help='Name to label fasta sequence.')
 
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -132,7 +133,7 @@ def main():
         print 'Invalid fasta file!!'
         sys.exit(1)
 
-    chrom_name = lines[0].replace('>', '')
+    chrom_name = args.chromosome_name #lines[0].replace('>', '')
 
     fasta_size_per_line = len(lines[1])
 
@@ -160,34 +161,35 @@ def main():
 
     sv_regions = sorted(sv_regions, key=itemgetter(1), reverse=True)
 
-    print 'Inserting CNVs in sequence.'
+    print 'Inserting SVs in sequence.'
     for sv_region in sv_regions:
         chrom, start, end, sv_type = sv_region[:4]
-        if args.verbose:
-            print 'Inserting %s in %s:%s-%s.' % (sv_type.upper(), chrom, start, end)
-        if len(sv_region) > 4:
-            translocation_info = sv_region[4]
-        if sv_type.upper().startswith('DEL'):
-            chrom_seq = insert_del(chrom_seq, start, end)
-        elif sv_type.upper().startswith('DUP'):
-            chrom_seq = insert_dup(chrom_seq, start, end)
-        elif sv_type.upper().startswith('INV'):
-            chrom_seq = insert_inv(chrom_seq, start, end)
-        elif sv_type.upper().startswith('UNBTR') or sv_type.upper().startswith('BALTR'):
-            chrom_tr = translocation_info.split(':')[0]
-            start_tr, end_tr = translocation_info.split(':')[1].split('-')
-            start_line, start_pos, end_line, end_pos = calculate_positions(start, end, fasta_size_per_line)
-            trans_chrom_filename  = args.fasta_input.name.replace(chrom_name, chrom_tr)
-            trans_chrom_filename2 = args.fasta_input.name.replace(chrom_name, 'chr'+chrom_tr)
-            if not os.path.isfile(trans_chrom_filename) and not os.path.isfile(trans_chrom_filename2):
-                print 'Error! I was not able to find files [%s|%s].' % (trans_chrom_filename, trans_chrom_filename2)
-                sys.exit(0)
-            elif not os.path.isfile(trans_chrom_filename):
-                trans_chrom_filename = trans_chrom_filename2
+        if chrom_name == chrom:
             if args.verbose:
-                print 'Getting sequence %s from file [%s].' % (translocation_info, trans_chrom_filename)
-            trans_seq = get_subseq_from_fasta(trans_chrom_filename, start_line, start_pos, end_line, end_pos)
-            chrom_seq = insert_trans(chrom_seq, trans_seq, start)
+                print 'Inserting %s in %s:%s-%s.' % (sv_type.upper(), chrom, start, end)
+            if len(sv_region) > 4:
+                translocation_info = sv_region[4]
+            if sv_type.upper().startswith('DEL'):
+                chrom_seq = insert_del(chrom_seq, start, end)
+            elif sv_type.upper().startswith('DUP'):
+                chrom_seq = insert_dup(chrom_seq, start, end)
+            elif sv_type.upper().startswith('INV'):
+                chrom_seq = insert_inv(chrom_seq, start, end)
+            elif sv_type.upper().startswith('UNBTR') or sv_type.upper().startswith('BALTR'):
+                chrom_tr = translocation_info.split(':')[0]
+                start_tr, end_tr = translocation_info.split(':')[1].split('-')
+                start_line, start_pos, end_line, end_pos = calculate_positions(start, end, fasta_size_per_line)
+                trans_chrom_filename  = args.fasta_input.name.replace(chrom_name, chrom_tr)
+                trans_chrom_filename2 = args.fasta_input.name.replace(chrom_name, 'chr'+chrom_tr)
+                if not os.path.isfile(trans_chrom_filename) and not os.path.isfile(trans_chrom_filename2):
+                    print 'Error! I was not able to find files [%s|%s].' % (trans_chrom_filename, trans_chrom_filename2)
+                    sys.exit(0)
+                elif not os.path.isfile(trans_chrom_filename):
+                    trans_chrom_filename = trans_chrom_filename2
+                if args.verbose:
+                    print 'Getting sequence %s from file [%s].' % (translocation_info, trans_chrom_filename)
+                trans_seq = get_subseq_from_fasta(trans_chrom_filename, start_line, start_pos, end_line, end_pos)
+                chrom_seq = insert_trans(chrom_seq, trans_seq, start)
 
 
     print 'Writing to output file [%s].' % args.fasta_output.name

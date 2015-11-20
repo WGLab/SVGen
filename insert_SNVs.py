@@ -1,6 +1,6 @@
 # insert_SNVs.py
 # C: Sep 29, 2015
-# M: Nov  9, 2015
+# M: Nov 20, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -17,7 +17,7 @@ SNVs_inserted = 0
 def insert_SNV(REF, ALT, MAF):
     global SNVs_inserted
     rand_number = randint(1, 1000)
-    if rand_number <= round(MAF * 1000):
+    if rand_number <= round(MAF * 1000) and ALT in ['A', 'C', 'G', 'T']:
         SNVs_inserted += 1
         return ALT
     else:
@@ -60,7 +60,8 @@ def main():
     chrom_name = lines_fasta[0].replace('>', '')
     fasta_size_per_line = len(lines_fasta[1])
 
-    args.output_fasta_file.write('>' + chrom_name + '_SNVs\n')
+    args.output_fasta_file.write('>' + chrom_name + '\n')
+    # args.output_fasta_file.write('>' + chrom_name + '_SNVs\n')
 
     start = 0
     end = start + fasta_size_per_line - 1
@@ -83,7 +84,10 @@ def main():
             while int(POS) <= end + 1:
                 if len(REF)*len(ALT) != 1: # inserting only 1-base SNVs
                     freqs_line += 1
-                    CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
+                    try:
+                        CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
+                    except:
+                        break
                     if CHROM != args.chromosome_name_vcf: # in case finds next chromosome in frequencies file
                         break
                     continue
@@ -96,8 +100,6 @@ def main():
                         if base.upper() != REF:
                             args.vcf_output.write('%s\t%s\t%s\t%s\t.\t%s\n' % (CHROM, POS, REF, ALT, rsID))
                     else:
-                        # Print in case fasta position is different of freq. position
-                        # print 'There is something wrong with position', POS, ' - fasta =', new_line[int(POS)-start-one_based], ' - vcf =', REF
                         pass
                     if int(POS) >= end + 1:
                         freqs_line += 1

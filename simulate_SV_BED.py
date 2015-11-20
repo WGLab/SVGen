@@ -1,6 +1,6 @@
 # simulate_SV_BED.py
 # C: Oct  1, 2015
-# M: Nov 17, 2015
+# M: Nov 20, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -97,6 +97,7 @@ def main():
     parser.add_argument('--output', '-o', required=True, type=argparse.FileType('w'), metavar='output_bed_file', dest='output_bed_file', help='BED output file.')
     parser.add_argument('--gaps', required=True, type=file, metavar='gaps_file', dest='avoid_regions_file', help='BED file with regions to avoid (centromeres and telomeres).')
     parser.add_argument('--chroms', required=True, type=str, metavar='chromosome_name', dest='chromosome_name', help='Chromosome.', default='all')
+    parser.add_argument('--chroms_trans', required=False, type=str, metavar='chroms_trans', help='Chromosomes from which translocations will come from.', default='all')
     parser.add_argument('--distance', '-d', type=int, metavar='distance_between_SVs', dest='distance_between_SVs', help='Distance between SVs.', default=100000)
 
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -151,6 +152,7 @@ def main():
 
     # Parse chromosome ranges to get individual chromosomes
     chroms = parse_chrom_ranges(args.chromosome_name)
+    chroms_trans = parse_chrom_ranges(args.chroms_trans)
 
 
     SV_codes = {}
@@ -201,7 +203,7 @@ def main():
                     lines.pop()
                 bal_trans_lens = lines
             for length in bal_trans_lens:
-                chromB = choice(all_chroms)
+                chromB = choice(chroms_trans)
                 SV_codes[chromA] += ['baltr_'+length+'_'+chromB]
 
         if not args.unb_trans_len_filename is None:
@@ -211,7 +213,7 @@ def main():
                     lines.pop()
                 unb_trans_lens = lines
             for length in unb_trans_lens:
-                chromB = choice(all_chroms)
+                chromB = choice(chroms_trans)
                 SV_codes[chromA] += ['unbtr_'+length+'_'+chromB]
 
 
@@ -245,6 +247,9 @@ def main():
                     # Else, get the last SV inserted and start from the end of such SV
                     sv_typeB, startB, endB = SV_regions[chromB][-1].split('_')[:3]
                     startB, endB, regions_to_avoid[chromB] = pick_a_region(sv_size, int(endB) + args.distance_between_SVs, regions_to_avoid[chromB], args.distance_between_SVs)
+                    # If chromosomes are the same, pick another region
+                    if chromA == chromB:
+                        startB, endB, regions_to_avoid[chromB] = pick_a_region(sv_size, int(endB) + args.distance_between_SVs, regions_to_avoid[chromB], args.distance_between_SVs)
                 SV_regions[chromA] += [sv_type + '_' + str(startA) + '_' + str(endA) + '_' + chromB + ':' + str(startB) + '-' + str(endB)]
                 if sv_type == 'unbtr':
                     SV_regions[chromB] += ['unaff_' + str(startB) + '_' + str(endB) + '_' + chromA + ':' + str(startA) + '-' + str(endA)]

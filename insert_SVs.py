@@ -179,13 +179,14 @@ def main():
                 chrom_tr = translocation_info.split(':')[0]
                 start_tr, end_tr = translocation_info.split(':')[1].split('-')
                 start_line, start_pos, end_line, end_pos = calculate_positions(start, end, fasta_size_per_line)
-                trans_chrom_filename  = args.fasta_input.name.replace(chrom_name, chrom_tr)
-                trans_chrom_filename2 = args.fasta_input.name.replace(chrom_name, 'chr'+chrom_tr)
-                if not os.path.isfile(trans_chrom_filename) and not os.path.isfile(trans_chrom_filename2):
-                    print 'Error! I was not able to find files [%s|%s].' % (trans_chrom_filename, trans_chrom_filename2)
+                trans_chrom_filename  = args.fasta_input.name.replace('chr'+chrom_name, 'chr'+chrom_tr)
+                # trans_chrom_filename2 = args.fasta_input.name.replace(chrom_name, 'chr'+chrom_tr)
+                if not os.path.isfile(trans_chrom_filename): # and not os.path.isfile(trans_chrom_filename2):
+                    # print 'Error! I was not able to find files [%s|%s].' % (trans_chrom_filename, trans_chrom_filename2)
+                    print 'Error! I was not able to find files [%s].' % (trans_chrom_filename)
                     sys.exit(0)
-                elif not os.path.isfile(trans_chrom_filename):
-                    trans_chrom_filename = trans_chrom_filename2
+                # elif not os.path.isfile(trans_chrom_filename):
+                    # trans_chrom_filename = trans_chrom_filename2
                 if args.verbose:
                     print 'Getting sequence %s from file [%s].' % (translocation_info, trans_chrom_filename)
                 trans_seq = get_subseq_from_fasta(trans_chrom_filename, start_line, start_pos, end_line, end_pos)

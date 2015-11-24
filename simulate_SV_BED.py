@@ -1,6 +1,6 @@
 # simulate_SV_BED.py
 # C: Oct  1, 2015
-# M: Nov 20, 2015
+# M: Nov 24, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -11,6 +11,17 @@ from operator import itemgetter
 prog_name = 'simulate_SV_BED.py'
 
 all_chroms = map(str, range(1,23)) + ['X', 'Y']
+
+
+def intervals_overlap(start1, end1, start2, end2):
+    min_1 = min(start_1, end_1)
+    max_1 = max(start_1, end_1)
+    min_2 = min(start_2, end_2)
+    max_2 = max(start_2, end_2)
+    if max_2 < min_1 or max_1 < min_2: # no overlap
+        return False
+    else:
+        return True
 
 
 
@@ -48,7 +59,8 @@ def pick_a_region(size, start, regions_to_avoid, distance):
 
     end = start + size - 1
 
-    while between(avoid_start, avoid_end, start) or between(avoid_start, avoid_end, end):
+    # while between(avoid_start, avoid_end, start) or between(avoid_start, avoid_end, end):
+    while intervals_overlap(avoid_start, avoid_end, start, end):
         start = avoid_end + int(1.1 * distance)
         end = start + size - 1
         avoid_start = regions_to_avoid[0][0]

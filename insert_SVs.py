@@ -190,6 +190,8 @@ def main():
                 if args.verbose:
                     print 'Getting sequence %s from file [%s].' % (translocation_info, trans_chrom_filename)
                 trans_seq = get_subseq_from_fasta(trans_chrom_filename, start_line, start_pos, end_line, end_pos)
+                if sv_type.upper().startswith('BALTR'):
+                    chrom_seq = insert_del(chrom_seq, start, end)
                 chrom_seq = insert_trans(chrom_seq, trans_seq, start)
 
 

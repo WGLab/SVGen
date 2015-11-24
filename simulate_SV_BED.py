@@ -13,7 +13,7 @@ prog_name = 'simulate_SV_BED.py'
 all_chroms = map(str, range(1,23)) + ['X', 'Y']
 
 
-def intervals_overlap(start1, end1, start2, end2):
+def intervals_overlap(start_1, end_1, start_2, end_2):
     min_1 = min(start_1, end_1)
     max_1 = max(start_1, end_1)
     min_2 = min(start_2, end_2)

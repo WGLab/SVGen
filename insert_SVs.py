@@ -1,6 +1,6 @@
 # insert_SVs.py
 # C: Sep 29, 2015
-# M: Nov 19, 2015
+# M: Dec  8, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -9,6 +9,15 @@ from random import randint
 from operator import itemgetter
 
 prog_name = 'insert_SVs.py'
+
+
+complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+
+
+
+def reverse_complement(seq):
+    return ''.join(complement[base] for base in reversed(seq))
+
 
 
 def insert_del(seq, start, end, zero_based=False):
@@ -40,7 +49,7 @@ def insert_inv(seq, start, end, zero_based=False):
     if not zero_based:
         start -= 1
         end   -= 1
-    return seq[:start] + seq[start:end+1:][::-1] + seq[end+1:]
+    return seq[:start] + reverse_complement(seq[start:end+1:]) + seq[end+1:]
 
 
 
@@ -132,12 +141,16 @@ def main():
     if not lines[0].startswith('>'):
         print 'Invalid fasta file!!'
         sys.exit(1)
+    else:
+        chrom_label = lines[0][1:]
+
 
     chrom_name = args.chromosome_name #lines[0].replace('>', '')
 
     fasta_size_per_line = len(lines[1])
 
     # if args.fasta_type == 'multiple':
+    
     chrom_seq = ''
     LEN_CHROM = 0
     for line in lines[1:]:
@@ -160,6 +173,7 @@ def main():
             sv_regions.append([chrom, int(start), int(end), sv_type])
 
     sv_regions = sorted(sv_regions, key=itemgetter(1), reverse=True)
+    # print sv_regions
 
     print 'Inserting SVs in sequence.'
     for sv_region in sv_regions:
@@ -196,7 +210,7 @@ def main():
 
 
     print 'Writing to output file [%s].' % args.fasta_output.name
-    write_fasta(chrom_name, args.fasta_output, chrom_seq, fasta_size_per_line, args.fasta_label)
+    write_fasta(chrom_name, args.fasta_output, chrom_seq, fasta_size_per_line, chrom_label)
     print 'Simulations for', chrom_name, 'done.'
     print 'Total size:', LEN_CHROM
     print 

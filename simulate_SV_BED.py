@@ -1,16 +1,34 @@
 # simulate_SV_BED.py
 # C: Oct  1, 2015
-# M: Nov 24, 2015
+# M: Dec 10, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
 import sys, argparse
-from random import randint, choice
+from random import randint, choice, gauss
 from operator import itemgetter
 
 prog_name = 'simulate_SV_BED.py'
 
 all_chroms = map(str, range(1,23)) + ['X', 'Y']
+
+def pick_an_interval(size, intervals, distance):
+    interval = choice(intervals)
+    intervals.remove(interval)
+    # Looking for an interval that has enough room for the chosen size
+    while interval[1] - interval[0] + 1 < distance + size and intervals != []:
+        interval = choice(intervals)
+        intervals.remove(interval)
+    if interval[1] - interval[0] + 1 < size + distance:
+        print '\n\tError! It was not possible to finish creating regions. Try to run again with less or smaller regions, or a smaller distance.\n'
+        return None, None, intervals
+    start = interval[0] + distance
+    end   = start + size - 1
+    interval[0] = end + 1
+    if interval[0] < interval[1]:
+        intervals.append(interval)
+
+    return start, end, intervals
 
 
 def intervals_overlap(start_1, end_1, start_2, end_2):
@@ -24,12 +42,27 @@ def intervals_overlap(start_1, end_1, start_2, end_2):
         return True
 
 
-
+"""
 def between(start, end, value):
     if (start <= value and value <= end) or (end <= value and value <= start):
         return True
     else:
         return False
+"""
+
+
+def remove_intervals(intervals, start, end):
+    new_intervals = []
+    intervals_sorted = sorted(intervals, key=lambda tup: tup[0])
+    interval_start = min(start, intervals_sorted[0][1] + 1)
+    for i in range(len(intervals_sorted)):
+        interval_end   = intervals_sorted[i][0] - 1
+        if i > 0 or interval_start < interval_end:
+            new_intervals.append([interval_start, interval_end])
+        interval_start = intervals_sorted[i][1] + 1
+    if intervals_sorted[-1][1]+1 < end:
+        new_intervals.append([intervals_sorted[-1][1]+1, end])
+    return new_intervals
 
 
 
@@ -46,29 +79,39 @@ def sort_and_merge_intervals(intervals):
             # we know via sorting that lower[0] <= higher[0]
             if higher[0] <= lower[1]:
                 upper_bound = max(lower[1], higher[1])
-                merged[-1] = (lower[0], upper_bound)  # replace by merged interval
+                merged[-1] = [lower[0], upper_bound]  # replace by merged interval
             else:
                 merged.append(higher)
     return merged
 
 
-
+"""
 def pick_a_region(size, start, regions_to_avoid, distance):
     avoid_start = regions_to_avoid[0][0]
     avoid_end   = regions_to_avoid[0][1]
 
     end = start + size - 1
 
-    # while between(avoid_start, avoid_end, start) or between(avoid_start, avoid_end, end):
-    while intervals_overlap(avoid_start, avoid_end, start, end):
-        start = avoid_end + int(1.1 * distance)
-        end = start + size - 1
+    while avoid_start < start:
+        regions_to_avoid = regions_to_avoid[1:]
         avoid_start = regions_to_avoid[0][0]
         avoid_end   = regions_to_avoid[0][1]
-        regions_to_avoid = regions_to_avoid[1:]
-    
-    return start, end, regions_to_avoid
 
+
+    # while between(avoid_start, avoid_end, start) or between(avoid_start, avoid_end, end):
+    while intervals_overlap(avoid_start, avoid_end, start, end):
+        print 'jump ',
+        start = avoid_end + distance
+        end = start + size - 1
+        regions_to_avoid = regions_to_avoid[1:]
+        avoid_start = regions_to_avoid[0][0]
+        avoid_end   = regions_to_avoid[0][1]
+       
+    print 
+    print "pick_a_region"
+    print avoid_start, avoid_end, start, end, regions_to_avoid[:3]
+    return start, end, regions_to_avoid
+"""
 
 
 def parse_chrom_ranges(text):
@@ -110,7 +153,8 @@ def main():
     parser.add_argument('--gaps', required=True, type=file, metavar='gaps_file', dest='avoid_regions_file', help='BED file with regions to avoid (centromeres and telomeres).')
     parser.add_argument('--chroms', required=True, type=str, metavar='chromosome_name', dest='chromosome_name', help='Chromosome.', default='all')
     parser.add_argument('--chroms_trans', required=False, type=str, metavar='chroms_trans', help='Chromosomes from which translocations will come from.', default='all')
-    parser.add_argument('--distance', '-d', type=int, metavar='distance_between_SVs', dest='distance_between_SVs', help='Distance between SVs.', default=100000)
+    parser.add_argument('--distance', '-d', type=int, metavar='distance_between_SVs', dest='distance_between_SVs', help='Distance between SVs in a countinuous (ungapped) region.', default=100000)
+    parser.add_argument('--dist_sd', '-sd', type=int, metavar='distance_sd', dest='distance_sd', help='Standard deviation of distance between SVs in a countinuous (ungapped) region.', default=10000)
 
     parser.add_argument('-v', '--verbose', action='store_true')
 
@@ -146,6 +190,7 @@ def main():
         lines = lines[1:]
 
     regions_to_avoid = {}
+    nongap_regions = {}
     for line in lines:
         chrom, start, end = line.split()[1:4]
         chrom = chrom.replace('chr', '')
@@ -154,17 +199,19 @@ def main():
         else:
             regions_to_avoid[chrom] += [[int(start), int(end)]]
 
-    starts = {}
-    ends   = {}
-    for chrom in regions_to_avoid.keys():
-        regions_to_avoid[chrom] = sort_and_merge_intervals(regions_to_avoid[chrom])
-        starts[chrom] = 0
-        ends[chrom] = 0
-
 
     # Parse chromosome ranges to get individual chromosomes
     chroms = parse_chrom_ranges(args.chromosome_name)
     chroms_trans = parse_chrom_ranges(args.chroms_trans)
+
+
+    for chrom in all_chroms:
+        gap_regions = sort_and_merge_intervals(regions_to_avoid[chrom])
+        nongap_regions[chrom] = remove_intervals(gap_regions, 1, chrom_lens[chrom])
+        # print
+        # print 'chrom', chrom, '>>', chrom_lens[chrom]
+        # print 'gap_regions', gap_regions
+        # print 'nongap_regions', nongap_regions[chrom]
 
 
     SV_codes = {}
@@ -243,7 +290,9 @@ def main():
 
             sv_size = int(sv_size)
 
-            startA, endA, regions_to_avoid[chromA] = pick_a_region(sv_size, endA+args.distance_between_SVs, regions_to_avoid[chromA], args.distance_between_SVs)
+            # startA, endA, regions_to_avoid[chromA] = pick_a_region(sv_size, endA + int(gauss(args.distance_between_SVs, args.distance_sd)), regions_to_avoid[chromA], int(gauss(args.distance_between_SVs, args.distance_sd)))
+            startA, endA, nongap_regions[chromA] = pick_an_interval(sv_size, nongap_regions[chromA], int(gauss(args.distance_between_SVs, args.distance_sd)))
+
             if endA > chromA_len:
                 print '\n\n\tImpossible to finish process of creating SVs for chrom %s. Not enough chromosome length (size is %d) for simulated SVs.' % (chromA, chromA_len)
                 print '\tExiting.\n\n'
@@ -252,16 +301,21 @@ def main():
             if chromB is None:
                 SV_regions[chromA] += [sv_type + '_' + str(startA) + '_' + str(endA)]
             else:
+                startB, endB, nongap_regions[chromB] = pick_an_interval(sv_size, nongap_regions[chromB], int(gauss(args.distance_between_SVs, args.distance_sd)))
+                '''
                 if SV_regions[chromB] == []:
                     # If no SV was inserted in chromB, start from the first position in chromosome
-                    startB, endB, regions_to_avoid[chromB] = pick_a_region(sv_size, 1, regions_to_avoid[chromB], args.distance_between_SVs)
+                    # startB, endB, regions_to_avoid[chromB] = pick_a_region(sv_size, 1, regions_to_avoid[chromB], int(gauss(args.distance_between_SVs, args.distance_sd)))
+                    startB, endB, nongap_regions[chromB] = pick_an_interval(sv_size, nongap_regions[chromA], int(gauss(args.distance_between_SVs, args.distance_sd)))
                 else:
                     # Else, get the last SV inserted and start from the end of such SV
                     sv_typeB, startB, endB = SV_regions[chromB][-1].split('_')[:3]
-                    startB, endB, regions_to_avoid[chromB] = pick_a_region(sv_size, int(endB) + args.distance_between_SVs, regions_to_avoid[chromB], args.distance_between_SVs)
+                    startB, endB, regions_to_avoid[chromB] = pick_a_region(sv_size, int(endB) + int(gauss(args.distance_between_SVs, args.distance_sd)), regions_to_avoid[chromB], int(gauss(args.distance_between_SVs, args.distance_sd)))
                     # If chromosomes are the same, pick another region
                     if chromA == chromB:
-                        startB, endB, regions_to_avoid[chromB] = pick_a_region(sv_size, int(endB) + args.distance_between_SVs, regions_to_avoid[chromB], args.distance_between_SVs)
+                        startB, endB, regions_to_avoid[chromB] = pick_a_region(sv_size, int(endB) + int(gauss(args.distance_between_SVs, args.distance_sd)), regions_to_avoid[chromB], int(gauss(args.distance_between_SVs, args.distance_sd)))
+                '''
+
                 SV_regions[chromA] += [sv_type + '_' + str(startA) + '_' + str(endA) + '_' + chromB + ':' + str(startB) + '-' + str(endB)]
                 if sv_type == 'unbtr':
                     SV_regions[chromB] += ['unaff_' + str(startB) + '_' + str(endB) + '_' + chromA + ':' + str(startA) + '-' + str(endA)]

@@ -1,6 +1,6 @@
 # insert_SNVs.py
 # C: Sep 29, 2015
-# M: Nov 20, 2015
+# M: Dec 16, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -38,12 +38,6 @@ def main():
 
     args = parser.parse_args()
     
-    # fasta_input         = sys.argv[1]
-    # fasta_output        = sys.argv[2]
-    # freq_filename       = sys.argv[3]
-    # chromosome_name_vcf = sys.argv[4]
-    # vcf_output_filename = sys.argv[5]
-
     lines_fasta = args.fasta_input.read().split('\n')
     while lines_fasta[-1] == '':
         lines_fasta.pop()
@@ -113,7 +107,6 @@ def main():
                         break
                     else:
                         CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
-                        # print CHROM, POS, REF, ALT, MAF, rsID
                         if CHROM != args.chromosome_name_vcf:
                             break
                 else:
@@ -125,6 +118,7 @@ def main():
 
     print 'Simulations for', chrom_name, 'done.'
     print SNVs_inserted, 'SNVs were inserted.'
+    # print 'Frequency:', 
     print 
     
 

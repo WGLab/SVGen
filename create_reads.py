@@ -1,6 +1,6 @@
 # create_reads.py
 # C: Sep 29, 2015
-# M: Dec 18, 2015
+# M: Jan 12, 2016
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -26,7 +26,6 @@ qualMIN  = 30
 # Parameters for Illumina quality scores
 # alpha_q = 2
 beta_q  = 20
-# mean_beta_dist = alpha/float(alpha+beta)
 
 
 def alpha_for_short_read_quality(alphaMAX, alphaMIN, i, n):
@@ -49,12 +48,6 @@ def create_quality_for_illumina_read(length):
     beta_outputs = [betavariate(alpha_for_short_read_quality(alphaMAX, alphaMIN, i, length), beta_q) for i in range(length)]
     qualities    = [fastq_qual[int(quality_by_beta_dist(beta_output, qualMIN, qualMAX))] for beta_output in beta_outputs]
     return ''.join(qualities)
-
-
-"""
-length = 70
-qualities = [min(int(betavariate(alpha_for_short_read_quality(betaMAX, betaMIN, i, n), beta) * avg_base_qual / mean_beta_dist), avg_base_qual) for i in range(length)]
-""" 
 
 
 
@@ -159,6 +152,7 @@ def write_fastq_read(fastq_file, name, seq, quality):
 
 
 
+"""
 # Not working yet
 def write_bam_read(bam_file, name, seq, quality):
     a = pysam.AlignedSegment()
@@ -176,7 +170,7 @@ def write_bam_read(bam_file, name, seq, quality):
     a.tags = (("NM", 1),
               ("RG", "L1"))
     bam_file.write(a)
-
+"""
 
 
 def generate_pair_from_fragment(fragment, read_length):

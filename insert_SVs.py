@@ -11,7 +11,7 @@ from operator import itemgetter
 prog_name = 'insert_SVs.py'
 
 
-complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': ''}
 
 
 

@@ -1,6 +1,6 @@
 # create_reads.py
 # C: Sep 29, 2015
-# M: Dec  8, 2015
+# M: Dec 18, 2015
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -365,42 +365,12 @@ def main():
                     write_read(output1, label + '-' + str(read_id), read_with_errors, qualities)
                     read_id += 1
 
-
-
+    # closing files
     output1.close()
     if paired_end:
         output2.close()
 
 
-
 if __name__ == '__main__':
     main()
-
-
-"""
-
-header = { 'HD': {'VN': '1.0'},
-            'SQ': [{'LN': 1575, 'SN': 'chr1'},
-                   {'LN': 1584, 'SN': 'chr2'}] }
-
-tmpfilename = 'test.bam'
-outfile = pysam.AlignmentFile(tmpfilename, "wb", header=header)
-a = pysam.AlignedSegment()
-a.query_name = "read_28833_29006_6945"
-a.query_sequence="AGCTTAGCTAGCTACCTATATCTTGGTCTTGGCCG"
-a.flag = 99
-a.reference_id = 0
-a.reference_start = 32
-a.mapping_quality = 20
-a.cigar = ((0,10), (2,1), (0,25))
-a.next_reference_id = 0
-a.next_reference_start=199
-a.template_length=167
-a.query_qualities = pysam.fromQualityString("<<<<<<<<<<<<<<<<<<<<<:<9/,&,22;;<<<")
-a.tags = (("NM", 1),
-          ("RG", "L1"))
-outfile.write(a)
-outfile.write(a)
-outfile.close()
-"""
 

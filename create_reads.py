@@ -1,6 +1,6 @@
 # create_reads.py
 # C: Sep 29, 2015
-# M: Jan 12, 2016
+# M: Jan 19, 2016
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -235,6 +235,7 @@ def main():
     parser.add_argument('--insert_sd', required=False, type=int, metavar='insert_sd', help='Insert standard deviation for short reads.', default=50)
     parser.add_argument('--alpha', required=False, type=int, metavar='alpha', help='Alpha for beta distribution of read lengths.', default=2)
     parser.add_argument('--beta', required=False, type=int, metavar='beta', help='Beta for beta distribution of read lengths.', default=10)
+    parser.add_argument('--read_label', required=False, type=str, help='Label to add in each read.')
 
     parser.add_argument('-v', '--verbose', action='store_true')
 
@@ -267,7 +268,10 @@ def main():
         print 'Invalid fasta file!!'
         sys.exit(1)
     else:
-        label = label[1:].split()[0]
+        if not args.read_label is None:
+            label = args.read_label + '_' + label[1:].split()[0]
+        else:
+            label = label[1:].split()[0]
 
     if args.verbose:
         print 'Finding non-N regions.'

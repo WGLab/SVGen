@@ -175,7 +175,7 @@ def write_bam_read(bam_file, name, seq, quality):
 
 def generate_pair_from_fragment(fragment, read_length):
     # return [fragment[:read_length], ''.join(complement[base] for base in reversed(fragment[-read_length:]))]
-    return [fragment[:read_length], reverse_complement(fragment[-read_length:]))]
+    return [fragment[:read_length], reverse_complement(fragment[-read_length:])]
 
 
 

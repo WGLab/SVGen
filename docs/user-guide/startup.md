@@ -2,5 +2,5 @@
 
 for beginners, use this command:
 
-
+exampel command
 

@@ -1,7 +1,8 @@
 # download_and_format_database.sh
 # C: Oct 23, 2015
-# M: Nov 19, 2015
+# M: Jan 13, 2016
 # A: Leandro Lima <leandrol@usc.edu>
+
 
 if [ "$#" -ne 1 ]; then
     echo -e "\n\n\tYou have to pass a genome version as a parameter."
@@ -10,10 +11,12 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
+
 if [ "$1" != "hg19" ] && [ "$1" != "hg38" ]; then
     echo -e "\n\n\tUnknown genome. Accepted versions: hg19 and hg38\n\n"
     exit 1
 fi
+
 
 mkdir reference
 cd reference
@@ -57,9 +60,22 @@ if [ "$gv" == "hg38" ]; then
     rmdir hg38/chroms
 fi
 
-cd $gv
-for chrom in {1..22} X Y; do
-    echo "bwa index chr$chrom.fa" | qsub -cwd -V -N chr$chrom""_index
-done
 
-cd ..
+# Uncomment the lines below in case you want to create bwa indexes
+
+# cd $gv
+# 
+# qsub 2> qsub_test.txt
+# qsub_test=`grep -c 'not found' qsub_test.txt`
+# 
+# if [ "$qsub_test" eq "1" ]; then
+#     for chrom in {1..22} X Y; do
+#         echo "bwa index chr$chrom.fa" | qsub -cwd -V -N chr$chrom""_index
+#     done
+# else
+#     for chrom in {1..22} X Y; do
+#         echo "bwa index chr$chrom.fa" | sh
+#     done
+# fi
+# 
+# cd ..

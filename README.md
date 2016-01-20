@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # SVGen: Simulation of structural variants in next-generation sequencing data.
 
 Existing simulation tools for structural variants (SV) offer limited options, some do not simulate single-nucleotide variants (SNV), and all need external programs to generate simulated sequence reads to benchmark SV calling software. To address these limitations, we developed SVGen to be a tool with an extensive range of options to simulate germline and somatic SVs of various types and from short and long read sequencing platforms. The output from SVGen include BED files with SV regions, FASTA files with the simulated genome sequence and FASTQ files for short or long reads.
@@ -53,12 +52,3 @@ LA Lima, H Yang, K Wang. SVGen: Simulation of structural variants in next-genera
 
 
 Copyright 2016 [USC Wang Lab](http://genomics.usc.edu)
-=======
-# SVGen
-
-Existing simulation tools for structural variants (SV) offer limited options, some do not simulate single-nucleotide variants (SNV), and all need external programs to generate simulated sequence reads to benchmark SV calling software. To address these limitations, we developed SVGen to be a tool with an extensive range of options to simulate germline and somatic SVs of various types and from short and long read sequencing platforms. The output from SVGen include BED files with SV regions, FASTA files with the simulated genome sequence and FASTQ files for short or long reads.
-
-# Reference
-
-- Lima L, Yang H, Wang K. SVGen: simulation of structural variants in next-generation sequencing data
->>>>>>> 06b15f75d10207715a4d25a0bc0acfb278d0acc9

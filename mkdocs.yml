@@ -1,6 +1,6 @@
 site_name: SVGen Documentation
 site_url: http://svgen.openbioinformatics.org/
-repo_url: http://github.com/WGLab/SVGen/
+repo_url: https://github.com/WGLab/SVGen/
 repo_name: GitHub
 site_description: Documentation for the SVGen software
 site_author: Leandro Lima, Kai Wang

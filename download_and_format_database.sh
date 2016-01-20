@@ -60,6 +60,7 @@ if [ "$gv" == "hg38" ]; then
     rmdir hg38/chroms
 fi
 
+
 # Uncomment the lines below in case you want to create bwa indexes
 
 # cd $gv

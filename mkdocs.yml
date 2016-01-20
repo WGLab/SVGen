@@ -20,6 +20,5 @@ pages:
 - Misc:
   - FAQ: misc/faq.md
   - What is New: misc/whatsnew.md
-  - Version History: misc/version_history.md
   - Credit: misc/credit.md
   - How to Contribute: misc/contributing.md

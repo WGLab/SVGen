@@ -94,6 +94,53 @@ Example:
         
 ## Insert structural variants (SVs)
 
+Command syntax:
+
+    python insert_SVs.py \
+        -i [input.fa] \
+        -o [output.fa] \
+        --chrom_lens [chromosome_lengths.txt] \
+        --chrom [chromosome_name] \
+        --bed [input_file.bed] \
+        -v
+        
+Example:
+
+    python insert_SVs.py \
+        -i chr22.SNV.fa \
+        -o chr22.SNV.SV.fa \
+        --chrom_lens reference/chrom_lengths_hg38.txt \
+        --chrom 22 \
+        --bed SVs.bed \
+        -v
+
+## Create reads
+
+Command syntax (for **p**aired-**e**nd reads):
+
+    python create_reads.py \
+        -pe \
+        -i [input.fa] \
+        -o [output.fq] \
+        --cov [coverage] \
+        --read_len [read_length] \
+        --snp_rate [SNP_rate_for_reads] \
+        --del_rate [deletion_rate_for_reads] \
+        --ins_rate [insertion_rate_for_reads] \
+        --read_label [label_for_reads] \
+        -v
+        
+Example:
+
+    python create_reads.py \
+        -pe \
+        -i chr22.SNV.SV.fa \
+        -o reads.fq \
+        --cov 10 \
+        --read_len 100 \
+        --snp_rate 0.01 \
+        --del_rate 0.0001 \
+        --ins_rate 0.0001
 
 
 	

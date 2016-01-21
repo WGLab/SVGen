@@ -28,7 +28,9 @@ If you don't use git:
 
 ## Download databases (genome references and frequency files).
 
-This step takes some time, but just need to be run once. This command will download the chosen reference, with all chromosomes () and allele frequencies for different populations (from Annovar website). After downloading, the files will be prepared (indexed
+This step takes some time, but just need to be run once. This command will download the chosen reference, with all chromosomes (from UCSC website) and allele frequencies for different populations (from Annovar website). 
+
+<!-- After downloading, the files will be prepared (indexed...) -->
 	
 
 	

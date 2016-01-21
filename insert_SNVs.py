@@ -1,6 +1,6 @@
 # insert_SNVs.py
 # C: Sep 29, 2015
-# M: Dec 16, 2015
+# M: Jan 21, 2016
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -69,6 +69,12 @@ def main():
     # print CHROM, POS, REF, ALT, MAF, rsID
 
 
+    args.vcf_output.write('##fileformat=VCFv4.1\n')
+    args.vcf_output.write('##reference=%s\n' % args.fasta_input.name)
+    args.vcf_output.write('##contig=<ID=%s>\n' % args.chromosome_name_vcf)
+    args.vcf_output.write('#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\n')
+
+
     # Reading fasta lines to compare with SNV positions
     for line_fasta in lines_fasta[1:]:
         new_line = line_fasta
@@ -92,7 +98,7 @@ def main():
                             base = base.lower()
                         new_line = new_line[:int(POS)-start-one_based] + base + new_line[int(POS)-start-one_based+1:]
                         if base.upper() != REF:
-                            args.vcf_output.write('%s\t%s\t%s\t%s\t.\t%s\n' % (CHROM, POS, REF, ALT, rsID))
+                            args.vcf_output.write('%s\t%s\t%s\t%s\t%s\t.\t.\t.\t.\n' % (CHROM, POS, rsID, REF, ALT))
                     else:
                         pass
                     if int(POS) >= end + 1:

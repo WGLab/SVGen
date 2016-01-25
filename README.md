@@ -47,7 +47,7 @@ LA Lima, H Yang, K Wang. SVGen: Simulation of structural variants in next-genera
 
 ## More information
 
-* [SVGen Homepage](http://svgen.openbioinformatics.org)
+<!--* [SVGen Homepage](http://svgen.openbioinformatics.org)-->
 
 * [Wang Genomics Lab Homepage](http://genomics.usc.edu)
 

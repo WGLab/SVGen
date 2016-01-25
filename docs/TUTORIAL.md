@@ -9,9 +9,9 @@ LA Lima, H Yang, K Wang. SVGen: Simulation of structural variants in next-genera
 ## Table of Contents
 1. [Download program](#download-program)
 2. [Download databases](#databases)
-3. [Insert single-nucleotide variants (SNVs)](#insert-SNVs)
-4. [Generate structural variant (SVs) regions](#generate-SVs)
-5. [Insert structural variants (SVs)](#insert-SVs)
+3. [Insert single-nucleotide variants](#insert-SNVs)
+4. [Generate structural variant regions](#generate-SVs)
+5. [Insert structural variants](#insert-SVs)
 6. [Create reads](#create-reads)
 
 ## Download program

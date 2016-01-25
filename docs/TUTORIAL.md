@@ -9,8 +9,10 @@ LA Lima, H Yang, K Wang. SVGen: Simulation of structural variants in next-genera
 ## Table of Contents
 1. [Download program](#download-program)
 2. [Download databases](#databases)
-3. [Run](#run)
-4. [Other examples](#other-examples)
+3. [Insert single-nucleotide variants (SNVs)](#insert-SNVs)
+4. [Generate structural variant (SVs) regions](#generate-SVs)
+5. [Insert structural variants (SVs)](#insert-SVs)
+6. [Create reads](#create-reads)
 
 ## Download program
 
@@ -26,7 +28,7 @@ If you don't use git:
 	mv SVGen-master SVGen
 	cd SVGen
 
-## Download databases (genome references and frequency files).
+## Download databases
 
 This step takes some time, but just need to be run once. This command will download the chosen reference, with all chromosomes (from UCSC website) and allele frequencies for different populations (from Annovar website). 
 

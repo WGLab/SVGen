@@ -43,7 +43,7 @@ Example:
 	
 	./download_and_format_database.sh hg38
 	
-## Insert single-nucleotide variants (SNVs)
+## Insert single-nucleotide variants
 
 Command syntax:	
 
@@ -65,7 +65,7 @@ Example:
         --vcf_output chr22.SNV.vcf
 
 
-## Generate structural variant (SVs) regions
+## Generate structural variant regions
 
 Command syntax:
 
@@ -96,7 +96,7 @@ Example:
         --gaps reference/gaps_hg38.txt \
         -o SVs.bed
         
-## Insert structural variants (SVs)
+## Insert structural variants
 
 Command syntax:
 

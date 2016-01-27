@@ -1,6 +1,6 @@
 # insert_SVs.py
 # C: Sep 29, 2015
-# M: Dec  8, 2015
+# M: Jan 27, 2016
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -111,14 +111,14 @@ def write_fasta(chrom_name, output_fasta, seq, size_per_line, fasta_label=None):
 def main():
 
     parser = argparse.ArgumentParser(description='This program inserts structural variants from a BED file into a FASTA file.', prog=prog_name)
+    # Required
     parser.add_argument('--fasta_input', '-i',  required=True, metavar='input.fasta',  type=file, help='Fasta file to be changed with SVs.')
     parser.add_argument('--fasta_output', '-o', required=True, metavar='output.fasta', type=argparse.FileType('w'), help='Fasta file to be created with SVs.')
     parser.add_argument('--bed', dest='sv_bed', required=True, metavar='SVs.bed', type=file, help='BED file with SVs to be inserted.')
     parser.add_argument('--chrom_lens', required=True, type=file, metavar='chrom_lengths_file', dest='chrom_lens_file', help='Text file with chromosome lengths.')
-    # parser.add_argument('--fasta_type', '-f',  required=True, metavar='fasta_type',  type=str, help='A [single] fasta file or [multiple]?')
     parser.add_argument('--chrom', required=True, type=str, metavar='chromosome_name', dest='chromosome_name', help='Chromosome.')
+    # Optional
     parser.add_argument('--fasta_label', required=False, type=str, metavar='fasta_label', dest='fasta_label', help='Name to label fasta sequence.')
-
     parser.add_argument('-v', '--verbose', action='store_true')
 
     args = parser.parse_args()

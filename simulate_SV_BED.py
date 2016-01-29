@@ -1,6 +1,6 @@
 # simulate_SV_BED.py
 # C: Oct  1, 2015
-# M: Dec 10, 2015
+# M: Jan 28, 2016
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -142,19 +142,20 @@ def parse_chrom_ranges(text):
 def main():
 
     parser = argparse.ArgumentParser(description='Get arguments to create random structural variant regions in a BED file.', prog=prog_name)
+    # Required
+    parser.add_argument('--chrom_lens', required=True, type=file, metavar='chrom_lengths_file', dest='chrom_lens_file', help='Text file with chromosome lengths.')
+    parser.add_argument('--output', '-o', required=True, type=argparse.FileType('w'), metavar='output_bed_file', dest='output_bed_file', help='BED output file.')
+    parser.add_argument('--gaps', required=True, type=file, metavar='gaps_file', dest='avoid_regions_file', help='BED file with regions to avoid (centromeres and telomeres).')
+    parser.add_argument('--chroms', required=True, type=str, metavar='chromosome_names', dest='chromosome_name', help='Chromosome names (range).', default='all')
+    # Optional
     parser.add_argument('--del_lens', required=False, type=file, metavar='del_lengths_file', dest='del_len_filename',   help='Text file with deletion lengths.')
     parser.add_argument('--dup_lens', required=False, type=file, metavar='dup_lengths_file', dest='dup_len_filename',   help='Text file with duplication lengths.')
     parser.add_argument('--inv_lens', required=False, type=file, metavar='inv_lengths_file', dest='inv_len_filename',   help='Text file with inversion lengths.')
     parser.add_argument('--bal_trans_lens', required=False, type=file, metavar='bal_trans_lengths_file', dest='bal_trans_len_filename', help='Text file with balanced translocation lengths.')
     parser.add_argument('--unb_trans_lens', required=False, type=file, metavar='unb_trans_lengths_file', dest='unb_trans_len_filename', help='Text file with unbalanced translocation lengths.')
-    
-    parser.add_argument('--chrom_lens', required=True, type=file, metavar='chrom_lengths_file', dest='chrom_lens_file', help='Text file with chromosome lengths.')
-    parser.add_argument('--output', '-o', required=True, type=argparse.FileType('w'), metavar='output_bed_file', dest='output_bed_file', help='BED output file.')
-    parser.add_argument('--gaps', required=True, type=file, metavar='gaps_file', dest='avoid_regions_file', help='BED file with regions to avoid (centromeres and telomeres).')
-    parser.add_argument('--chroms', required=True, type=str, metavar='chromosome_name', dest='chromosome_name', help='Chromosome.', default='all')
     parser.add_argument('--chroms_trans', required=False, type=str, metavar='chroms_trans', help='Chromosomes from which translocations will come from.', default='all')
-    parser.add_argument('--distance', '-d', type=int, metavar='distance_between_SVs', dest='distance_between_SVs', help='Distance between SVs in a countinuous (ungapped) region.', default=100000)
-    parser.add_argument('--dist_sd', '-sd', type=int, metavar='distance_sd', dest='distance_sd', help='Standard deviation of distance between SVs in a countinuous (ungapped) region.', default=10000)
+    parser.add_argument('--distance', '-d', required=False, type=int, metavar='distance_between_SVs', dest='distance_between_SVs', help='Distance between SVs in a countinuous (ungapped) region.', default=100000)
+    parser.add_argument('--dist_sd', '-sd', required=False, type=int, metavar='distance_sd', dest='distance_sd', help='Standard deviation of distance between SVs in a countinuous (ungapped) region.', default=10000)
 
     parser.add_argument('-v', '--verbose', action='store_true')
 

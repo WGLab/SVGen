@@ -1,6 +1,6 @@
 # create_reads.py
 # C: Sep 29, 2015
-# M: Jan 19, 2016
+# M: Jan 28, 2016
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -152,27 +152,6 @@ def write_fastq_read(fastq_file, name, seq, quality):
 
 
 
-"""
-# Not working yet
-def write_bam_read(bam_file, name, seq, quality):
-    a = pysam.AlignedSegment()
-    a.query_name = name # "read_28833_29006_6945"
-    a.query_sequence = seq # "AGCTTAGCTAGCTACCTATATCTTGGTCTTGGCCG"
-    a.flag = 99
-    a.reference_id = 0
-    a.reference_start = 32
-    a.mapping_quality = 20
-    a.cigar = ((0,10), (2,1), (0,25))
-    a.next_reference_id = 0
-    a.next_reference_start=199
-    a.template_length=167
-    a.query_qualities = pysam.fromQualityString(quality)
-    a.tags = (("NM", 1),
-              ("RG", "L1"))
-    bam_file.write(a)
-"""
-
-
 def generate_pair_from_fragment(fragment, read_length):
     # return [fragment[:read_length], ''.join(complement[base] for base in reversed(fragment[-read_length:]))]
     return [fragment[:read_length], reverse_complement(fragment[-read_length:])]
@@ -222,12 +201,13 @@ def get_nonN_regions(seq):
 def main():
 
     parser = argparse.ArgumentParser(description='This program inserts structural variants from a BED file into a FASTA file.', prog=prog_name)
+    # Required
     parser.add_argument('--fasta_input', '-i',  required=True, metavar='input.fasta',  type=file, help='Fasta file to be changed with SVs.')
     parser.add_argument('--output_file', '-o', required=True, metavar='output.fq|output.bam', type=str, help='Output file for reads. It must finish with .fq/.fastq or .bam (paired-end option will automatically change file names to output1.fq and output2.fq).')
-    parser.add_argument('-pe', action='store_true', dest='paired_end', help='Add option to generate paired-end reads.')
-    # parser.add_argument('--filetype', required=True, metavar='bam|fastq', type=file, help='Data type of output: unaligned "bam" or "fastq" file.')
     parser.add_argument('--cov', required=True, type=float, metavar='coverage', dest='coverage', help='Average coverage.')
     parser.add_argument('--read_len', required=True, type=int, metavar='avg_read_len', dest='avg_read_len', help='Average read length (length is fix for short reads).')
+    # Optional
+    parser.add_argument('-pe', action='store_true', dest='paired_end', help='Add option to generate paired-end reads.')
     parser.add_argument('--ins_rate', required=False, type=float, metavar='insertion_rate', dest='insertion_error_rate', help='Insertion error rate for reads.', default=0.12)
     parser.add_argument('--del_rate', required=False, type=float, metavar='deletion_rate', dest='deletion_error_rate', help='Deletion error rate for reads.', default=0.02)
     parser.add_argument('--snp_rate', required=False, type=float, metavar='snp_rate', dest='snp_error_rate', help='SNP error rate for reads.', default=0.01)

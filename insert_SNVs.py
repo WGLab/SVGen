@@ -1,6 +1,6 @@
 # insert_SNVs.py
 # C: Sep 29, 2015
-# M: Jan 21, 2016
+# M: Jan 28, 2016
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -30,10 +30,10 @@ def main():
 
     one_based = 1 # it could be used in case we have zero based positions
 
-    parser.add_argument('--fasta_input',  required=True, metavar='input.fasta',  type=file, help='Fasta file to be changed with SNVs.')
-    parser.add_argument('--fasta_output', required=True, metavar='output.fasta', dest='output_fasta_file', type=argparse.FileType('w'), help='Fasta file to be created with SNVs.')
-    parser.add_argument('--freq_file',    required=True, type=file, help='Fasta file to be changed with SNVs.')
-    parser.add_argument('--vcf_output',   required=True, type=argparse.FileType('w'), help='VCF file to be generated with SNVs inserted.')
+    parser.add_argument('--fasta_input',  required=True, metavar='input.fasta',  type=file, help='Input fasta file to be used as reference to receive SNVs.')
+    parser.add_argument('--fasta_output', required=True, metavar='output.fasta', dest='output_fasta_file', type=argparse.FileType('w'), help='Output fasta file with random SNVs, based in frequencies.')
+    parser.add_argument('--freq_file',    required=True, type=file, help='Text file SNV frequencies.')
+    parser.add_argument('--vcf_output',   required=True, type=argparse.FileType('w'), help='VCF file generated with SNVs inserted.')
     parser.add_argument('--chrom', required=True, type=str, metavar='chrom', dest='chromosome_name_vcf', help='Chromosome.')
 
     args = parser.parse_args()
@@ -65,9 +65,7 @@ def main():
     while CHROM != args.chromosome_name_vcf:
         freqs_line += 1
         CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
-        
-    # print CHROM, POS, REF, ALT, MAF, rsID
-
+    
 
     args.vcf_output.write('##fileformat=VCFv4.1\n')
     args.vcf_output.write('##reference=%s\n' % args.fasta_input.name)

@@ -27,7 +27,7 @@ Existing simulation tools for structural variants (SV) offer limited options, so
 
 ## Tutorial
 
-Click [here](https://github.com/WGLab/SVGen/blob/master/docs/TUTORIAL.md) for a **quick start**, or [here](https://github.com/WGLab/SVGen/blob/master/docs/user-guide/manual.md) for a **detailed tutorial**.
+Click [here](http://svgen.openbioinformatics.org/en/latest/user-guide/startup/) for a **quick start**, or [here](http://svgen.openbioinformatics.org/en/latest/user-guide/manual/) for a **detailed tutorial**.
 
 
 ## Revision History
@@ -49,7 +49,7 @@ LA Lima, H Yang, K Wang. SVGen: Simulation of structural variants in next-genera
 
 ## More information
 
-<!--* [SVGen Homepage](http://svgen.openbioinformatics.org)-->
+* [SVGen Homepage](http://svgen.openbioinformatics.org)
 
 * [Wang Genomics Lab Homepage](http://genomics.usc.edu)
 

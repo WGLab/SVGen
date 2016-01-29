@@ -25,7 +25,9 @@ Existing simulation tools for structural variants (SV) offer limited options, so
 
 * **simulated reads**: generates short or long reads from a given FASTA file.
 
-Click [here](https://github.com/WGLab/SVGen/blob/master/docs/TUTORIAL.md) for a quick start.
+## Tutorial
+
+Click [here](https://github.com/WGLab/SVGen/blob/master/docs/TUTORIAL.md) for a **quick start**, or [here](https://github.com/WGLab/SVGen/blob/master/docs/user-guide/manual.md) for a **detailed tutorial**.
 
 
 ## Revision History

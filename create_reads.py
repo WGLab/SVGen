@@ -1,6 +1,6 @@
 # create_reads.py
 # C: Sep 29, 2015
-# M: Jan 28, 2016
+# M: Feb  1, 2016
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -289,20 +289,22 @@ def main():
         # region = ''.join([choice(['A', 'C', 'G', 'T']) for i in range(1000)])
         n_reads = int(args.coverage * len(region) / avg_read_len)
 
+
         # PacBio
         if long_reads:
-            read_lens = [min(int(betavariate(alpha, beta) * avg_read_len / mean_beta_dist), len(region)) for i in range(n_reads)]
+            if n_reads > 0:
+                read_lens = [min(int(betavariate(alpha, beta) * avg_read_len / mean_beta_dist), len(region)) for i in range(n_reads)]
 
-            # sampling fragments without errors from reference
-            reads = generate_reads_from_seq(region.upper().replace('N', ''), read_lens)
+                # sampling fragments without errors from reference
+                reads = generate_reads_from_seq(region.upper().replace('N', ''), read_lens)
 
-            # adding errors to reads and writing it to output file
-            for read in reads:
-                errors = generate_errors(len(read), args.insertion_error_rate, args.deletion_error_rate, args.snp_error_rate)
-                read_with_errors = insert_errors_in_seq(read, errors)
-                qualities = create_quality_for_pacbio_read(len(read_with_errors), qual_mean, qual_sd)
-                write_read(output1, label + '-' + str(read_id), read_with_errors, qualities)
-                read_id += 1
+                # adding errors to reads and writing it to output file
+                for read in reads:
+                    errors = generate_errors(len(read), args.insertion_error_rate, args.deletion_error_rate, args.snp_error_rate)
+                    read_with_errors = insert_errors_in_seq(read, errors)
+                    qualities = create_quality_for_pacbio_read(len(read_with_errors), qual_mean, qual_sd)
+                    write_read(output1, label + '-' + str(read_id), read_with_errors, qualities)
+                    read_id += 1
 
         # short reads
         else:

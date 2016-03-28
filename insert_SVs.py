@@ -1,6 +1,6 @@
 # insert_SVs.py
 # C: Sep 29, 2015
-# M: Jan 27, 2016
+# M: Mar 28, 2016
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -13,6 +13,16 @@ prog_name = 'insert_SVs.py'
 
 complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': ''}
 
+def intervals_overlap(interval1, interval2):
+    start1, end1 = interval1
+    if start1 > end1:
+        start1, end1 = end1, start1
+    start2, end2 = interval2
+    if start2 > end2:
+        start2, end2 = end2, start2
+    if start1 <= start2 <= end1 or start2 <= start1 <= end2:
+        return True
+    return False
 
 
 def reverse_complement(seq):
@@ -120,6 +130,7 @@ def main():
     # Optional
     parser.add_argument('--fasta_label', required=False, type=str, metavar='fasta_label', dest='fasta_label', help='Name to label fasta sequence.')
     parser.add_argument('-v', '--verbose', action='store_true')
+    parser.add_argument('--overlap', action='store_true')
 
     args = parser.parse_args()
 
@@ -166,14 +177,25 @@ def main():
     for line in lines:
         elems = line.split()
         chrom, start, end, sv_type = elems[:4]
-        if len(elems) > 4:
-            translocation_info = elems[4]
-            sv_regions.append([chrom, int(start), int(end), sv_type, translocation_info])
-        else:
-            sv_regions.append([chrom, int(start), int(end), sv_type])
+        if chrom == chrom_name:
+            if len(elems) > 4:
+                translocation_info = elems[4]
+                sv_regions.append([chrom, int(start), int(end), sv_type, translocation_info])
+            else:
+                sv_regions.append([chrom, int(start), int(end), sv_type])
 
     sv_regions = sorted(sv_regions, key=itemgetter(1), reverse=True)
-    # print sv_regions
+
+    # Checking intervals overlap
+    if not args.overlap:
+        if len(sv_regions) > 1:
+            for i in range(1, len(sv_regions)):
+                if intervals_overlap(sv_regions[i][1:3], sv_regions[i-1][1:3]):
+                    print '\n\tError! SV regions are overlapping!'
+                    print '\t%s:%d-%d [%s] <--> %s:%d-%d [%s] \n' % (sv_regions[i-1][0], sv_regions[i-1][1], sv_regions[i-1][2], sv_regions[i-1][3],
+                                                                     sv_regions[i][0],   sv_regions[i][1],   sv_regions[i][2],   sv_regions[i][3])
+                    sys.exit(1)
+
 
     print 'Inserting SVs in sequence.'
     for sv_region in sv_regions:
@@ -203,7 +225,7 @@ def main():
                     # trans_chrom_filename = trans_chrom_filename2
                 if args.verbose:
                     print 'Getting sequence %s from file [%s].' % (translocation_info, trans_chrom_filename)
-                trans_seq = get_subseq_from_fasta(trans_chrom_filename, start_line, start_pos, end_line, end_pos)
+                trans_seq = get_subseq_from_fasta(trans_chrom_filename, start_line, start_pos, end_line, end_pos).upper()
                 if sv_type.upper().startswith('BALTR'):
                     chrom_seq = insert_del(chrom_seq, start, end)
                 chrom_seq = insert_trans(chrom_seq, trans_seq, start)

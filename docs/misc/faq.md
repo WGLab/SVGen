@@ -1,7 +1,4 @@
-1. **How to report a bug or to ask a question?**
+1. **How does SVGen differ from other simulation tools?**
 
-    The best way is:
-    First, do read the website thoroughly especially FAQ.
-    Second, if you cannot find answer in FAQ or do not understand the answer well, then drop me an email as which should contain (1) command line argument (2) error message in screen or the LOG file (3) sometimes example inputfile (4) in case you use Mac or Windows, let me know. The reason is that I can fix something or diagnose something only if I can understand the question and reproduce the results.
-
+    SVGen is designed to simulate raw reads (FASTQ files) for benchmarking software tools that detect strcutural variants from sequencing data, yet many other tools aim to simulate regions (BED files). Currently SVGen supports both short reads and long reads (PacBio-generated reads), each with different error models. Furthermore, SVGen can simulate loss-of-heterozygosity (LOH) regions, and simulate SVs in tumor genomes, given a stromal contamination parameter by the user.
 

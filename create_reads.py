@@ -1,13 +1,14 @@
 # create_reads.py
 # C: Sep 29, 2015
-# M: Feb  1, 2016
+# M: May  3, 2016
 # A: Leandro Lima <leandrol@usc.edu>
 
 
-import os, sys, argparse #, linecache
+import os, sys, argparse, cPickle #, linecache
 from random import *
 # from operator import itemgetter
 from insert_SVs import reverse_complement
+import numpy as np
 
 prog_name = 'create_reads.py'
 
@@ -16,16 +17,65 @@ fastq_qual = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`a
 
 complement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
 
+# Creating GC->probability dictionary
+gc = [i/100. for i in range(101)]
+cov  = [(((62.9390 + 390.7907 * i + (-439.2405) * i**2) - 144.80) / 38.86921) for i in gc]
+cov = [i-min(cov) for i in cov]
+cov = [i/max(cov) for i in cov]
+gc_cov = {}
+gc_cov.update(zip(gc, cov))
 
 # min and max alpha for beta distribution
 alphaMAX = 15
 alphaMIN = 4
-qualMAX  = 42
-qualMIN  = 30
+
+# max and min random data of quality score
+qualMAX  = 45
+qualMIN  = 25
 
 # Parameters for Illumina quality scores
 # alpha_q = 2
 beta_q  = 20
+
+# Bin szie for GC content
+gc_region_size = 1000
+
+
+
+def gc_content(sequence):
+    sequence = sequence.upper()
+    A_count = sequence.count('A')
+    C_count = sequence.count('C')
+    G_count = sequence.count('G')
+    T_count = sequence.count('T')
+    gc = float(G_count + C_count)/(A_count+C_count+G_count+T_count)
+    return gc
+
+
+
+def gc_intervals(sequence, size, min_bases):
+    intervals = [[start, start+size-1, gc_content(sequence[start-1:start+size-1])] for start in range(1, len(sequence)+1, size)
+                 if len(sequence[start-1:start+size-1])-sequence[start-1:start+size-1].count('N') >= min_bases]
+    return intervals
+
+
+
+def prob_intervals(sequence, size, min_bases):
+    """
+    The same as the function 'gc_intervals', but instead of returning
+    GC-content, it directly returns the probabilities
+    """
+    intervals = [[start, start+size-1, gc_cov[round(gc_content(sequence[start-1:start+size-1]),2)]] for start in range(1, len(sequence)+1, size)
+                 if len(sequence[start-1:start+size-1])-sequence[start-1:start+size-1].count('N') >= min_bases]
+    return intervals
+
+
+
+def gc_to_prob(intervals):
+    SUM = sum([interval[2] for interval in intervals])
+    interval_probs = [[interval[0], interval[1], interval[2]/SUM] for interval in intervals]
+    return interval_probs
+
 
 
 def alpha_for_short_read_quality(alphaMAX, alphaMIN, i, n):
@@ -156,6 +206,41 @@ def generate_pair_from_fragment(fragment, read_length):
     # return [fragment[:read_length], ''.join(complement[base] for base in reversed(fragment[-read_length:]))]
     return [fragment[:read_length], reverse_complement(fragment[-read_length:])]
 
+"""
+def calculate_coverage(regions, gc):
+    for i in range(len(regions)):
+
+    ((((62.9390 + 390.7907 * gc + (-439.2405) * gc ^ 2) - 144.80) / 38.86921) + 10)
+"""
+
+
+def generate_reads_from_seq_by_gc(seq, read_lens):
+    '''
+    This function gets a sequence (string) and a list of read lengths
+    and returns a list of reads distributed according to GC content
+    throughout the sequence with the corresponding read lengths. Some 
+    reads may be clipped if located in the end of the sequence.
+    '''
+    n_reads = len(read_lens)
+    exp_start_distance = len(seq) / len(read_lens)
+    min_nonN_bases = 50
+    intervals = prob_intervals(seq, gc_region_size, min_nonN_bases)
+    intervals = gc_to_prob(intervals)
+    # print intervals[:100]
+    region_probs = [interval[2] for interval in intervals]
+    # regions = [interval[:2] for interval in intervals]
+    index_intervals = np.random.choice(range(len(intervals)), n_reads, p=region_probs) # np.random.choice(4, 1000, p=[0.1, 0.2, 0.3, 0.4])
+
+    starts = [randint(intervals[i][0], intervals[i][1]) for i in index_intervals]
+    # starts = range(0, len(seq), exp_start_distance)
+    ends = [starts[i]+read_lens[i] for i in range(n_reads)]
+    reads = []
+    for i in range(n_reads):
+        if ends[i] > len(seq):
+            reads.append(seq[starts[i]:])
+        else:
+            reads.append(seq[starts[i]:ends[i]])
+    return reads
 
 
 def generate_reads_from_seq(seq, read_lens):
@@ -192,6 +277,9 @@ def get_nonN_regions(seq):
     
     for elem in nonN_regions:
         nonN_regions.remove(elem)
+        # print elem.strip('N')[:10] + ' ... ' + elem.strip('N')[-10:] + ' - total: ' + str(len(elem.strip('N')))
+        # if len(elem.strip('N')) < 10:
+        #     print elem
         nonN_regions.add(elem.strip('N'))
         
     return list(nonN_regions)
@@ -216,6 +304,8 @@ def main():
     parser.add_argument('--alpha', required=False, type=int, metavar='alpha', help='Alpha for beta distribution of read lengths.', default=2)
     parser.add_argument('--beta', required=False, type=int, metavar='beta', help='Beta for beta distribution of read lengths.', default=10)
     parser.add_argument('--read_label', required=False, type=str, help='Label to add in each read.')
+    parser.add_argument('--fast_sample', required=False, type=int, metavar='fast_sample', default=1000,
+                        help='Number of quality score strings, or sets of errors, for reads. Setting a number for this variable will make the process of creating quality scores faster.')
 
     parser.add_argument('-v', '--verbose', action='store_true')
 
@@ -226,9 +316,9 @@ def main():
     # Checking changing function to write output file, depending on type
     if filetype in ['fastq', 'fq']:
         write_read = write_fastq_read
-    elif filetype == 'bam':
-        write_read = write_bam_read
-        import pysam
+    # elif filetype == 'bam':
+        # write_read = write_bam_read
+        # import pysam
     else:
         print '\nError: output file must be a .fq/.fastq or .bam file.'
         sys.exit(1)
@@ -275,6 +365,14 @@ def main():
     else:
         long_reads = False
 
+    if not args.fast_sample is None:
+        if long_reads:
+            read_qualities = [create_quality_for_pacbio_read(avg_read_len, qual_mean, qual_sd) for i in range(int(args.fast_sample))]
+        else:
+            read_qualities = [create_quality_for_illumina_read(avg_read_len) for i in range(int(args.fast_sample))]
+        reads_errors = [generate_errors(avg_read_len, args.insertion_error_rate, args.deletion_error_rate, args.snp_error_rate) for i in range(int(args.fast_sample))]
+        # print read_qualities
+
     if args.verbose:
         print 'Creating reads.'
 
@@ -288,6 +386,8 @@ def main():
 
         # region = ''.join([choice(['A', 'C', 'G', 'T']) for i in range(1000)])
         n_reads = int(args.coverage * len(region) / avg_read_len)
+        if paired_end:
+            n_reads /= 2
 
 
         # PacBio
@@ -296,13 +396,17 @@ def main():
                 read_lens = [min(int(betavariate(alpha, beta) * avg_read_len / mean_beta_dist), len(region)) for i in range(n_reads)]
 
                 # sampling fragments without errors from reference
-                reads = generate_reads_from_seq(region.upper().replace('N', ''), read_lens)
+                reads = generate_reads_from_seq_by_gc(region.upper().replace('N', ''), read_lens)
 
                 # adding errors to reads and writing it to output file
                 for read in reads:
-                    errors = generate_errors(len(read), args.insertion_error_rate, args.deletion_error_rate, args.snp_error_rate)
+                    if args.fast_sample is None:
+                        qualities = create_quality_for_pacbio_read(len(read_with_errors), qual_mean, qual_sd)
+                        errors = generate_errors(len(read), args.insertion_error_rate, args.deletion_error_rate, args.snp_error_rate)
+                    else:
+                        qualities = choice(read_qualities)
+                        errors = choice(reads_errors)
                     read_with_errors = insert_errors_in_seq(read, errors)
-                    qualities = create_quality_for_pacbio_read(len(read_with_errors), qual_mean, qual_sd)
                     write_read(output1, label + '-' + str(read_id), read_with_errors, qualities)
                     read_id += 1
 
@@ -315,27 +419,28 @@ def main():
                 read_lens = [min(2*avg_read_len + int(gauss(args.insert_size, args.insert_sd)), len(region)) for i in range(n_reads)]
 
                 # sampling fragments without errors from reference
-                fragments = generate_reads_from_seq(region.upper().replace('N', ''), read_lens)
+                fragments = generate_reads_from_seq_by_gc(region.upper().replace('N', ''), read_lens)
 
                 # adding errors to reads and writing it to output file
                 for fragment in fragments:
-                    read1, read2 = generate_pair_from_fragment(fragment, avg_read_len)
-                    errors1 = generate_errors(len(read1), args.insertion_error_rate, args.deletion_error_rate, args.snp_error_rate)
-                    errors2 = generate_errors(len(read2), args.insertion_error_rate, args.deletion_error_rate, args.snp_error_rate)
-                    read_with_errors1 = insert_errors_in_seq(read1, errors1)
-                    read_with_errors2 = insert_errors_in_seq(read2, errors2)
-                    qualities1 = create_quality_for_illumina_read(len(read_with_errors1))
-                    qualities2 = create_quality_for_illumina_read(len(read_with_errors2))
-                    write_read(output1, label + '-' + str(read_id) + '/1', read_with_errors1, qualities1)
-                    write_read(output2, label + '-' + str(read_id) + '/2', read_with_errors2, qualities2)
-                    read_id += 1
+                    if len(fragment) > 2.5*avg_read_len:
+                        read1, read2 = generate_pair_from_fragment(fragment, avg_read_len)
+                        errors1 = generate_errors(len(read1), args.insertion_error_rate, args.deletion_error_rate, args.snp_error_rate)
+                        errors2 = generate_errors(len(read2), args.insertion_error_rate, args.deletion_error_rate, args.snp_error_rate)
+                        read_with_errors1 = insert_errors_in_seq(read1, errors1)
+                        read_with_errors2 = insert_errors_in_seq(read2, errors2)
+                        qualities1 = create_quality_for_illumina_read(len(read_with_errors1))
+                        qualities2 = create_quality_for_illumina_read(len(read_with_errors2))
+                        write_read(output1, label + '-' + str(read_id) + '/1', read_with_errors1, qualities1)
+                        write_read(output2, label + '-' + str(read_id) + '/2', read_with_errors2, qualities2)
+                        read_id += 1
 
 
             else:
                 read_lens = [avg_read_len] * n_reads
 
                 # sampling fragments without errors from reference
-                reads = generate_reads_from_seq(region.upper().replace('N', ''), read_lens)
+                reads = generate_reads_from_seq_by_gc(region.upper().replace('N', ''), read_lens)
 
                 # adding errors to reads and writing it to output file
                 for read in reads:

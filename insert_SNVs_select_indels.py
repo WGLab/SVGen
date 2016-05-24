@@ -1,6 +1,6 @@
 # insert_SNVs_select_indels.py
 # C: Sep 29, 2015
-# M: Apr 14, 2016
+# M: Apr 28, 2016
 # A: Leandro Lima <leandrol@usc.edu>
 
 
@@ -73,11 +73,11 @@ def main():
     end = start + fasta_size_per_line - 1
     freqs_line = 0 # for frequencies
     CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
-    last_rsID = rsID
+    last_POS = POS
     print 'Looking for chromosome %s in frequencies file [%s].' % (args.chromosome_name_vcf, args.freq_file.name)
     while CHROM != args.chromosome_name_vcf:
         freqs_line += 1
-        last_rsID = rsID
+        last_POS = POS
         CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
     
 
@@ -85,6 +85,7 @@ def main():
     args.vcf_output.write('##reference=%s\n' % args.fasta_input.name)
     args.vcf_output.write('##contig=<ID=%s>\n' % args.chromosome_name_vcf)
     args.vcf_output.write('#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\n')
+
 
     # Reading fasta lines to compare with SNV positions
     for line_fasta in lines_fasta[1:]:
@@ -94,11 +95,11 @@ def main():
             # Look for current SNV in fasta line
             while int(POS) <= end + 1:
                 if len(REF)*len(ALT) != 1: # select indels
-                    if args.indels_output and last_rsID != rsID and ALT.find('<') < 0 and select_indels(float(MAF)):
+                    if args.indels_output and int(POS)-int(last_POS)>5 and ALT.find('<') < 0 and select_indels(float(MAF)):
                         args.indels_output.write('%s\t%s\t%s\t%s\n' % (CHROM, POS, REF, ALT))
                     freqs_line += 1
                     try:
-                        last_rsID = rsID
+                        last_POS = POS
                         CHROM, POS, REF, ALT, MAF, rsID = frequencies[freqs_line].split()
                     except:
                         break
@@ -111,7 +112,13 @@ def main():
                         base = insert_SNV(REF, ALT, float(MAF))
                         if new_line[int(POS)-start-one_based].islower():
                             base = base.lower()
-                        new_line = new_line[:int(POS)-start-one_based] + base + new_line[int(POS)-start-one_based+1:]
+                        # print 'New line = [%s] + [%s] + [%s] - pos:%s, start:%d, REF:%s, ALT:%s' % (new_line[:int(POS)-start-one_based], base, new_line[int(POS)-start-one_based+1:], POS, start, REF, ALT)
+                        if int(POS) > start:
+                            new_line = new_line[:int(POS)-start-one_based] + base + new_line[int(POS)-start-one_based+1:]
+                        else:
+                            base + new_line[int(POS)-start-one_based+1:]
+                        if len(new_line) != len(line_fasta):
+                            print 'Error! len(new_line)[%s][%d] != len(line_fasta)[%s][%d]' % (new_line, len(new_line), line_fasta, len(line_fasta))
                         if base.upper() != REF:
                             args.vcf_output.write('%s\t%s\t%s\t%s\t%s\t.\t.\t.\t.\n' % (CHROM, POS, rsID, REF, ALT))
                     else:

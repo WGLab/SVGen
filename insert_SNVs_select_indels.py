@@ -1,7 +1,7 @@
 # insert_SNVs_select_indels.py
 # C: Sep 29, 2015
-# M: Apr 28, 2016
-# A: Leandro Lima <leandrol@usc.edu>
+# M: Jun  8, 2016
+# A: Leandro Lima <lelimaufc@gmail.com>
 
 
 prog_name = 'insert_SNVs_select_indels.py'
@@ -144,7 +144,8 @@ def main():
         start = end + 1
         end = start + fasta_size_per_line - 1
 
-    args.indels_output.close()
+    if args.indels_output:
+        args.indels_output.close()
     args.vcf_output.close()
     args.output_fasta_file.close()
     print 'Simulations for', chrom_name, 'done.'

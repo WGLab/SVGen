@@ -44,15 +44,14 @@ Leandro Lima - leandrol@usc.edu / lelimaufc@gmail.com
 
 ## Citation
 
-LA Lima, H Yang, K Wang. SVGen: Simulation of structural variants in next-generation sequencing data. (submitted)
+LA Lima, H Yang, C Dong, K Wang. SVGen: Simulation of structural variants in next-generation sequencing data. (submitted)
 
 
 ## More information
 
 * [SVGen Homepage](http://svgen.openbioinformatics.org)
 
-* [Wang Genomics Lab Homepage](http://genomics.usc.edu)
+* [Wang Genomics Lab Homepage](http://wglab.org)
 
 
 
-Copyright 2016 [USC Wang Lab](http://genomics.usc.edu)

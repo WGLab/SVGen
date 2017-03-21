@@ -1,4 +1,5 @@
 # split_fasta_by_contigs.py
+#!/usr/bin/python2
 # C: Sep 23, 2014
 # M: Nov 12, 2015
 # A: Leandro Lima <leandrol@usc.edu>

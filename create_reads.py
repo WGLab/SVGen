@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 # create_reads.py
 # C: Sep 29, 2015
 # M: May  3, 2016
